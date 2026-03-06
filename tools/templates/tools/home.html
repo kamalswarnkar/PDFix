@@ -1,18 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>PDFix</title>
+    <title>PDFix</title>
+    <style>
+        body{
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f6f9
+        }
+
+        h1{
+            margin-top: 40px;
+        }
+
+        .container{
+            width: 800px;
+            margin: auto;
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card{
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            color: black;
+            font-size: 18px;
+        }
+
+        .card:hover{
+            background: #eef3ff;
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>Welcome to PDFix</h1>
+    <h1>Welcome to PDFix</h1>
+    <p>
+        Simple Tools to work with PDFs
+    </p>
 
-<a href="/merge-pdf/">Merge PDF</a>
-<a href="/split-pdf/">Split PDF</a>
-<a href="/compress-pdf/">Compress PDF</a>
-<a href="/compress-pdf-100kb/">Compress PDF to 100KB</a>
-<a href="/extract-pages/">Extract Pages</a>
+    <div class="container">
+        <a class="card" href="/merge-pdf/">Merge PDF</a>
+        <a class="card" href="/split-pdf/">Split PDF</a>
+        <a class="card" href="/compress-pdf/">Compress PDF</a>
+        <a class="card" href="/compress-pdf-100kb/">Compress PDF to 100KB</a>
+        <a class="card" href="/extract-pages/">Extract Pages</a>
+    </div>
 
 </body>
 </html>

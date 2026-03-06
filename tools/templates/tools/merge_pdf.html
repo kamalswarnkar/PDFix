@@ -4,15 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Merge PDF - PDFix</title>
+    <style>
+        body{
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
+        }
+
+        .drop-zone{
+            width: 400px;
+            margin: auto;
+            margin-top: 40px;
+            padding: 40px;
+            border: 2px dashed #aaa;
+            border-radius: 10px;
+        }
+
+        .drop-zone:dragover{
+            background: #eef3ff;
+        }
+    </style>
 </head>
 <body>
     <h2>Merge PDF</h2>
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="file" name="files" multiple required>
+        <div class="drop-zone" id="dropZone">
+            <p>
+                Drop Your Files Here
+            </p>
+            <p>OR</p>
+            <input type="file" name="files" id="fileInput" multiple required>
+        </div>
         <br><br>
         <button type="submit">Merge</button>
     </form>
+
+    <script>
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+
+        dropZone.addEventListener("dragover", e => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+        });
+
+        dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("dragover");
+        });
+
+        dropZone.addEventListener("drop", e => {
+            e.preventDefault();
+            fileInput.files = e.dataTransfer.files;
+            dropZone.classList.remove("dragover");
+        })
+
+    </script>
 </body>
 </html>
