@@ -18,7 +18,11 @@ def merge_pdf(request):
         merged_filename = merge_pdfs(files)
         filepath = os.path.join(settings.MEDIA_ROOT, merged_filename)
 
-        return FileResponse(open(filepath, "rb"), as_attachment=True)
+        response = FileResponse(open(filepath, "rb"), as_attachment=True, filename=merged_filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     
     return render(request, "tools/merge_pdf.html")
 

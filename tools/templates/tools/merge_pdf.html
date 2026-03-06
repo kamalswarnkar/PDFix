@@ -17,17 +17,39 @@
             padding: 40px;
             border: 2px dashed #aaa;
             border-radius: 10px;
+            cursor: pointer;
         }
 
-        .drop-zone:dragover{
+        .drop-zone.dragover{
             background: #eef3ff;
+        }
+
+        .spinner{
+            margin: auto;
+            margin-top: 20px;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ddd;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin{
+            0%{transform:rotate(0deg);}
+            100%{transform:rotate(360deg);}
         }
     </style>
 </head>
 <body>
     <h2>Merge PDF</h2>
 
-    <form method="post" enctype="multipart/form-data">
+    <div id="loader" style="display: none;">
+        <h3>Processing your PDF...</h3>
+        <div class="spinner"></div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="uploadForm" target="downloadFrame">
         {% csrf_token %}
         <div class="drop-zone" id="dropZone">
             <p>
@@ -37,12 +59,17 @@
             <input type="file" name="files" id="fileInput" multiple required>
         </div>
         <br><br>
-        <button type="submit">Merge</button>
+        <button type="submit" id="submitBtn">Merge</button>
     </form>
+    <iframe name="downloadFrame" style="display: none;"></iframe>
 
     <script>
         const dropZone = document.getElementById("dropZone");
         const fileInput = document.getElementById("fileInput");
+        const form = document.getElementById("uploadForm");
+        const loader = document.getElementById("loader");
+        const button = document.getElementById("submitBtn");
+        //const frame = document.querySelector("iframe");
 
         dropZone.addEventListener("dragover", e => {
             e.preventDefault();
@@ -57,7 +84,34 @@
             e.preventDefault();
             fileInput.files = e.dataTransfer.files;
             dropZone.classList.remove("dragover");
-        })
+        });
+
+        form.addEventListener("submit", function(){
+            loader.style.display = "block";
+            button.disabled = true;
+            button.innerText = "Processing...";
+
+            const checkDownload = setInterval(function(){
+                if(document.cookie.indexOf("fileDownload=true") !== -1){
+                    loader.style.display = "none";
+                    button.disabled = false;
+                    button.innerText = "Merge PDFs";
+
+                    document.cookie = "fileDownload=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    clearInterval(checkDownload);
+                }
+            }, 500);
+        });
+
+        // frame.onload = function(){
+        //     if(downloading){
+        //         loader.style.display = "none";
+        //         button.disabled = false;
+        //         button.innerText = "Merge PDFs";
+
+        //         downloading = false;
+        //     }
+        // }
 
     </script>
 </body>
