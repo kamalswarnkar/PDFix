@@ -49,59 +49,59 @@
         <div class="spinner"></div>
     </div>
 
-    <form method="post" enctype="multipart/form-data" id="uploadForm" target="downloadFrame">
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        <div class="drop-zone" id="dropZone">
-            <p>
-                Drop Your Files Here
-            </p>
-            <p>OR</p>
-            <input type="file" name="files" id="fileInput" multiple required>
-        </div>
+        {% include "tools/components/uploader.html" with input_name="files" multiple=True %}
         <br><br>
         <button type="submit" id="submitBtn">Merge</button>
     </form>
-    <iframe name="downloadFrame" style="display: none;"></iframe>
-
+    
+    {% include "tools/components/uploader_script.html" %}
     <script>
-        const dropZone = document.getElementById("dropZone");
-        const fileInput = document.getElementById("fileInput");
+        //const dropZone = document.getElementById("dropZone");
+        //const fileInput = document.getElementById("fileInput");
         const form = document.getElementById("uploadForm");
         const loader = document.getElementById("loader");
         const button = document.getElementById("submitBtn");
         //const frame = document.querySelector("iframe");
 
-        dropZone.addEventListener("dragover", e => {
-            e.preventDefault();
-            dropZone.classList.add("dragover");
-        });
+        // dropZone.addEventListener("dragover", e => {
+        //     e.preventDefault();
+        //     dropZone.classList.add("dragover");
+        // });
 
-        dropZone.addEventListener("dragleave", () => {
-            dropZone.classList.remove("dragover");
-        });
+        // dropZone.addEventListener("dragleave", () => {
+        //     dropZone.classList.remove("dragover");
+        // });
 
-        dropZone.addEventListener("drop", e => {
-            e.preventDefault();
-            fileInput.files = e.dataTransfer.files;
-            dropZone.classList.remove("dragover");
-        });
+        // dropZone.addEventListener("drop", e => {
+        //     e.preventDefault();
+        //     fileInput.files = e.dataTransfer.files;
+        //     dropZone.classList.remove("dragover");
+        // });
 
         form.addEventListener("submit", function(){
-            loader.style.display = "block";
-            button.disabled = true;
-            button.innerText = "Processing...";
+
+            loader.style.display = "block"
+            button.disabled = true
+            button.innerText = "Processing..."
 
             const checkDownload = setInterval(function(){
-                if(document.cookie.indexOf("fileDownload=true") !== -1){
-                    loader.style.display = "none";
-                    button.disabled = false;
-                    button.innerText = "Merge PDFs";
 
-                    document.cookie = "fileDownload=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                    clearInterval(checkDownload);
+                if(document.cookie.indexOf("fileDownload=true") !== -1){
+
+                    loader.style.display = "none"
+                    button.disabled = false
+                    button.innerText = "Merge"
+
+                    document.cookie = "fileDownload=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+                    clearInterval(checkDownload)
+
                 }
-            }, 500);
-        });
+
+            }, 500)
+
+        })
 
         // frame.onload = function(){
         //     if(downloading){

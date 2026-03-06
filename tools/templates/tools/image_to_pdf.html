@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to PDF</title>
+    <style>
+        #previewContainer{
+            display:flex;
+            gap:15px;
+            flex-wrap:wrap;
+        }       
+
+        .image-card{
+            border:1px solid #ddd;
+            padding:10px;
+            cursor:grab;
+        }
+    </style>
+</head>
+<body>
+    <h2>Convert Image(s) to PDF</h2>
+
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+        <input type="file" id="imageInput" name="images" multiple accept="image/*" required>
+        <br><br>
+        <div id="previewContainer"></div>
+        <button type="submit">Convert to PDF</button>
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script>
+        const input = document.getElementById("imageInput");
+        const container = document.getElementById("previewContainer");
+
+        let filesArray = [];
+
+        input.addEventListener("change", function(){
+            filesArray = Array.from(input.files);
+            renderImages();
+        });
+
+        function renderImages(){
+            container.innerHTML = "";
+            filesArray.forEach((file, index)=>{
+                const reader = new FileReader();
+                reader.onload = function(e){
+                    const div = document.createElement("div");
+                    div.className = "image-card";
+                    div.dataset.index = index;
+
+                    div.innerHTML = '<img src="${e.target.result}" width="100"> <p>${file.name}</p>';
+
+                    container.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            })
+        }
+
+        new Sortable(container, {
+            animation: 150,
+            onEnd: function(){
+                const newOrder = [];
+
+                document.querySelectorAll(".image-card").forEach(card=>{
+                    newOrder.push(filesArray[card.dataset.index]);
+                })
+
+                filesArray = newOrder;
+            }
+        });
+
+        document.getElementById("uploadForm").addEventListener("submit", function(e){
+            const dataTransfer = new DataTransfer();
+
+            filesArray.forEach(file=>{
+                dataTransfer.items.add(file);
+            })
+
+            input.files = dataTransfer.files
+        });
+    </script>
+</body>
+</html>

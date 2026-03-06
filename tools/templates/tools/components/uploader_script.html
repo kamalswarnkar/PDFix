@@ -1,0 +1,21 @@
+<script>
+
+    const dropZone = document.getElementById("dropZone")
+    const fileInput = document.getElementById("fileInput")
+
+    dropZone.addEventListener("dragover", e=>{
+        e.preventDefault()
+        dropZone.classList.add("dragover")
+    })
+
+    dropZone.addEventListener("dragleave", ()=>{
+        dropZone.classList.remove("dragover")
+    })
+
+    dropZone.addEventListener("drop", e=>{
+        e.preventDefault()
+        fileInput.files = e.dataTransfer.files
+        dropZone.classList.remove("dragover")
+    })
+
+</script>

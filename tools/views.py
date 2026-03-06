@@ -5,6 +5,8 @@ from .services.split_pdf import split_pdf
 from .services.compress_pdf import compress_pdf
 from .services.compress_to_size import compress_pdf_to_size
 from .services.extract_pages import extract_pages
+from .services.image_to_pdf import img_to_pdf
+from .utils.cleanup import cleanup_old_files
 import os
 from django.conf import settings
 # Create your views here.
@@ -13,6 +15,8 @@ def home(request):
     return render(request, "tools/home.html")
 
 def merge_pdf(request):
+    cleanup_old_files()
+
     if request.method == "POST":
         files = request.FILES.getlist("files")
         merged_filename = merge_pdfs(files)
@@ -27,6 +31,8 @@ def merge_pdf(request):
     return render(request, "tools/merge_pdf.html")
 
 def split_pdf_view(request):
+    cleanup_old_files()
+
     if request.method == "POST":
         file = request.FILES.get("file")
         zipfilename = split_pdf(file)
@@ -37,6 +43,8 @@ def split_pdf_view(request):
     return render(request, "tools/split_pdf.html")
 
 def compress_pdf_view(request):
+    cleanup_old_files()
+
     if request.method == "POST":
         file = request.FILES.get("file")
         compressed_filename = compress_pdf(file)
@@ -46,6 +54,7 @@ def compress_pdf_view(request):
     return render(request, "tools/compress_pdf.html")
 
 def compress_100kb_view(request):
+    cleanup_old_files()
 
     if request.method == "POST":
 
@@ -64,6 +73,8 @@ def compress_100kb_view(request):
     return render(request, "tools/compress_100kb.html")
 
 def extract_pages_view(request):
+    cleanup_old_files()
+
     if request.method == "POST":
         file = request.FILES.get("file")
         start = int(request.POST.get("start"))
@@ -76,3 +87,19 @@ def extract_pages_view(request):
         return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
     
     return render(request, "tools/extract_pages.html")
+
+def image_to_pdf_view(request):
+    cleanup_old_files()
+
+    if request.method == "POST":
+        files = request.FILES.getlist("images")
+        filename = img_to_pdf(files)
+        filepath = os.path.join(settings.MEDIA_ROOT, filename)
+
+        response = FileResponse(open(filepath, "rb"), as_attachment=True, filename=filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
+    
+    return render(request, "tools/image_to_pdf.html")
