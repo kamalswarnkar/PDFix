@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Pages - PDFix</title>
+</head>
+<body>
+    <h2>Extract Pages from PDF</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="file" required>
+        <br><br>
+        <label>Start Page</label>
+        <input type="number" name="start" required>
+        <br><br>
+        <label>End Page</label>
+        <input type="number" name="end" required>
+        <br><br>
+        <button type="submit">Extract Pages</button>
+    </form>
+</body>
+</html>

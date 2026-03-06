@@ -4,6 +4,7 @@ from .services.merge_pdf import merge_pdfs
 from .services.split_pdf import split_pdf
 from .services.compress_pdf import compress_pdf
 from .services.compress_to_size import compress_pdf_to_size
+from .services.extract_pages import extract_pages
 import os
 from django.conf import settings
 # Create your views here.
@@ -24,10 +25,10 @@ def merge_pdf(request):
 def split_pdf_view(request):
     if request.method == "POST":
         file = request.FILES.get("file")
-        output_files = split_pdf(file)
-        file_path = os.path.join(settings.MEDIA_ROOT, output_files[0])
+        zipfilename = split_pdf(file)
+        file_path = os.path.join(settings.MEDIA_ROOT, zipfilename)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True)
+        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=zipfilename)
     
     return render(request, "tools/split_pdf.html")
 
@@ -57,3 +58,17 @@ def compress_100kb_view(request):
         )
 
     return render(request, "tools/compress_100kb.html")
+
+def extract_pages_view(request):
+    if request.method == "POST":
+        file = request.FILES.get("file")
+        start = int(request.POST.get("start"))
+        end = int(request.POST.get("end"))
+
+        filename = extract_pages(file, start, end)
+
+        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+
+        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+    
+    return render(request, "tools/extract_pages.html")

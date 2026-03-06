@@ -1,24 +1,28 @@
 from pypdf import PdfReader, PdfWriter
 import os
 import uuid
+import zipfile
 from django.conf import settings
 
 def split_pdf(file):
+    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+
     reader = PdfReader(file)
-    output_files = []
+    zipfilename = f"{uuid.uuid4()}_split_pdf.zip"
+    zip_path = os.path.join(settings.MEDIA_ROOT, zipfilename)
 
-    for i, page in enumerate(reader.pages):
-        writer = PdfWriter()
-        writer.add_page(page)
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        for i, page in enumerate(reader.pages):
+            writer = PdfWriter()
+            writer.add_page(page)
 
-        filename = f"{uuid.uuid4()}_page_{i+1}.pdf"
-        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+            pdf_filename = f"page_{i + 1}.pdf"
+            pdf_path = os.path.join(settings.MEDIA_ROOT, pdf_filename)
 
-        output_path = os.path.join(settings.MEDIA_ROOT, filename)
+            with open(pdf_path, "wb") as f:
+                writer.write(f)
+            
+            zipf.write(pdf_path, pdf_filename)
 
-        with open(output_path, "wb") as f:
-            writer.write(f)
-        
-        output_files.append(filename)
-    
-    return output_files
+            os.remove(pdf_path)
+    return zipfilename
