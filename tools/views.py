@@ -6,6 +6,7 @@ from .services.compress_pdf import compress_pdf
 from .services.compress_to_size import compress_pdf_to_size
 from .services.extract_pages import extract_pages
 from .services.image_to_pdf import img_to_pdf
+from .services.pdf_to_image import pdf_to_images
 from .utils.cleanup import cleanup_old_files
 import os
 from django.conf import settings
@@ -103,3 +104,19 @@ def image_to_pdf_view(request):
         return response
     
     return render(request, "tools/image_to_pdf.html")
+
+def pdf_to_image_view(request):
+    cleanup_old_files()
+
+    if request.method == "POST":
+        files = request.FILES.getlist("files")
+        zip_filename = pdf_to_images(files)
+        file_path = os.path.join(settings.MEDIA_ROOT, zip_filename)
+
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=zip_filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
+    
+    return render(request, "tools/pdf_to_image.html")

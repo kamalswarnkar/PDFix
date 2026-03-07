@@ -9,4 +9,5 @@ urlpatterns = [
     path("compress-pdf-100kb/", views.compress_100kb_view, name="compress_100kb"),
     path("extract-pages/", views.extract_pages_view, name="extract_pages"),
     path("image-to-pdf/", views.image_to_pdf_view, name="image_to_pdf"),
+    path("pdf-to-image/", views.pdf_to_image_view, name="pdf_to_image"),
 ]
