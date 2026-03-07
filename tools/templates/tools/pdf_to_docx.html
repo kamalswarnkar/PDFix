@@ -1,0 +1,44 @@
+{% extends "tools/base.html" %}
+
+{% block title %}PDF to DOCX - PDFix{% endblock %}
+
+{% block content %}
+
+<h2>PDF to DOCX</h2>
+
+<div id="loader" style="display:none;">
+    <h3>Processing your file...</h3>
+    <div class="spinner"></div>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="uploadForm">
+
+{% csrf_token %}
+
+{% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+
+<br><br>
+
+<button type="submit" id="submitBtn">Convert</button>
+
+</form>
+
+{% include "tools/components/uploader_script.html" %}
+
+<script>
+
+const form = document.getElementById("uploadForm")
+const loader = document.getElementById("loader")
+const button = document.getElementById("submitBtn")
+
+form.addEventListener("submit", function(){
+
+    loader.style.display="block"
+    button.disabled=true
+    button.innerText="Processing..."
+
+})
+
+</script>
+
+{% endblock %}

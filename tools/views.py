@@ -7,6 +7,8 @@ from .services.compress_to_size import compress_pdf_to_size
 from .services.extract_pages import extract_pages
 from .services.image_to_pdf import img_to_pdf
 from .services.pdf_to_image import pdf_to_images
+from .services.pdf_to_docx import pdf_to_docx
+from .services.docx_to_pdf import docx_to_pdf
 from .utils.cleanup import cleanup_old_files
 import os
 from django.conf import settings
@@ -120,3 +122,28 @@ def pdf_to_image_view(request):
         return response
     
     return render(request, "tools/pdf_to_image.html")
+
+def pdf_to_docx_view(request):
+    cleanup_old_files()
+
+    if request.method == "POST":
+        file = request.FILES.get("file")
+        file_name = pdf_to_docx(file)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+
+        return FileResponse(open(file_path, "wb"), as_attachment=True, filename=file_name)
+    
+    return render(request, "tools/pdf_to_docx.html")
+
+def docx_to_pdf_view(request):
+    cleanup_old_files()
+
+    if request.method == "POST":
+        file = request.FILES.get("file")
+        filename = docx_to_pdf(file)
+        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+
+        return FileResponse(open(file_path, "wb"), as_attachment=True, filename=filename)
+    
+    return render(request, "tools/docx_to_pdf.html")
+

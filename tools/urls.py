@@ -10,4 +10,6 @@ urlpatterns = [
     path("extract-pages/", views.extract_pages_view, name="extract_pages"),
     path("image-to-pdf/", views.image_to_pdf_view, name="image_to_pdf"),
     path("pdf-to-image/", views.pdf_to_image_view, name="pdf_to_image"),
+    path("pdf-to-docx/", views.pdf_to_docx_view, name="pdf_to_docx"),
+    path("docx-to-pdf/", views.docx_to_pdf_view, name="docx_to_pdf"),
 ]
