@@ -2,6 +2,29 @@
 
 {% block title %}PDF to DOCX - PDFix{% endblock %}
 
+{% block head %}
+<style>
+    body{
+        font-family: Arial, Helvetica, sans-serif;
+        text-align: center;
+    }
+
+    .drop-zone{
+        width: 400px;
+        margin: auto;
+        margin-top: 40px;
+        padding: 40px;
+        border: 2px dashed #aaa;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+
+    .drop-zone.dragover{
+        background: #eef3ff;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <h2>PDF to DOCX</h2>

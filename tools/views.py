@@ -131,7 +131,7 @@ def pdf_to_docx_view(request):
         file_name = pdf_to_docx(file)
         file_path = os.path.join(settings.MEDIA_ROOT, file_name)
 
-        return FileResponse(open(file_path, "wb"), as_attachment=True, filename=file_name)
+        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=file_name)
     
     return render(request, "tools/pdf_to_docx.html")
 
@@ -143,7 +143,7 @@ def docx_to_pdf_view(request):
         filename = docx_to_pdf(file)
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-        return FileResponse(open(file_path, "wb"), as_attachment=True, filename=filename)
+        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
     
     return render(request, "tools/docx_to_pdf.html")
 
