@@ -12,4 +12,5 @@ urlpatterns = [
     path("pdf-to-image/", views.pdf_to_image_view, name="pdf_to_image"),
     path("pdf-to-docx/", views.pdf_to_docx_view, name="pdf_to_docx"),
     path("docx-to-pdf/", views.docx_to_pdf_view, name="docx_to_pdf"),
+    path("rotate-pdf/", views.rotate_pdf_view, name="rotate_pdf"),
 ]

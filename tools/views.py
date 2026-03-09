@@ -9,6 +9,7 @@ from .services.image_to_pdf import img_to_pdf
 from .services.pdf_to_image import pdf_to_images
 from .services.pdf_to_docx import pdf_to_docx
 from .services.docx_to_pdf import docx_to_pdf
+from .services.rotate_pdf import rotate_pdf
 from .utils.cleanup import cleanup_old_files
 import os
 from django.conf import settings
@@ -147,3 +148,15 @@ def docx_to_pdf_view(request):
     
     return render(request, "tools/docx_to_pdf.html")
 
+def rotate_pdf_view(request):
+    cleanup_old_files()
+
+    if request.method == "POST":
+        file = request.FILES.get("file")
+        angle = int(request.POST.get("angle"))
+        filename = rotate_pdf(file, angle)
+        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+
+        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+    
+    return render(request, "tools/rotate_pdf.html")
