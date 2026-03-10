@@ -11,6 +11,7 @@ from .services.pdf_to_docx import pdf_to_docx
 from .services.docx_to_pdf import docx_to_pdf
 from .services.rotate_pdf import rotate_pdf
 from .services.protect_pdf import protect_pdf
+from .services.unlock_pdf import unlock_pdf
 from .utils.cleanup import cleanup_old_files
 import os
 from django.conf import settings
@@ -174,3 +175,16 @@ def protect_pdf_view(request):
         return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
     
     return render(request, "tools/protect_pdf.html")
+
+def unlock_pdf_view(request):
+    cleanup_old_files()
+
+    if request.method == "POST":
+        file = request.FILES.get("file")
+        pwd = request.POST.get("pwd")
+        filename = unlock_pdf(file, pwd)
+        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+
+        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+    
+    return render(request, "tools/unlock_pdf.html")
