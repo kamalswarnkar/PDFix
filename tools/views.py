@@ -12,6 +12,7 @@ from .services.docx_to_pdf import docx_to_pdf
 from .services.rotate_pdf import rotate_pdf
 from .services.protect_pdf import protect_pdf
 from .services.unlock_pdf import unlock_pdf
+from .services.reorder_pdf import reorder_pdf
 from .utils.cleanup import cleanup_old_files
 import os
 from django.conf import settings
@@ -188,3 +189,26 @@ def unlock_pdf_view(request):
         return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
     
     return render(request, "tools/unlock_pdf.html")
+
+def reorder_pdf_view(request):
+    cleanup_old_files()
+
+    if request.method == "POST":
+        file = request.FILES.get("file")
+        order = request.POST.get("order")
+        if not file or not order:
+            return render(request, "tools/reorder_pdf.html", {
+                "error": "Upload a PDF and wait for the page previews before submitting."
+            })
+
+        try:
+            filename = reorder_pdf(file, order)
+        except ValueError:
+            return render(request, "tools/reorder_pdf.html", {
+                "error": "Invalid page order. Upload the PDF again and reorder the previews."
+            })
+        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+
+        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+    
+    return render(request, "tools/reorder_pdf.html")

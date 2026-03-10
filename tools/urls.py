@@ -15,4 +15,5 @@ urlpatterns = [
     path("rotate-pdf/", views.rotate_pdf_view, name="rotate_pdf"),
     path("protect-pdf/", views.protect_pdf_view, name="protect_pdf"),
     path("unlock-pdf/", views.unlock_pdf_view, name="unlock_pdf"),
+    path("reorder-pdf/", views.reorder_pdf_view, name="reorder_pdf")
 ]
