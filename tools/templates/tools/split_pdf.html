@@ -6,9 +6,7 @@
 {% block content %}
     <h2>Split PDF</h2>
 
-    <p style="color: #666;">
-        Extract pages from your PDF file
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Split a PDF into separate pages or extract specific pages from your document. Perfect for sharing or organizing large PDF files." %}
 
     {% include "tools/components/spinner.html" %}
 

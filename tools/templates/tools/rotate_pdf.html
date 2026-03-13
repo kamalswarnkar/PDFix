@@ -6,9 +6,7 @@
 {% block content %}
     <h2>Rotate PDF</h2>
 
-    <p style="color: #666;">
-        Rotate pages in your PDF file easily.
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Rotate PDF pages clockwise or counterclockwise to fix orientation issues in your document." %}
 
     {% include "tools/components/spinner.html" %}
 

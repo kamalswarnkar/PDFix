@@ -6,9 +6,7 @@
 {% block content %}
     <h2>Convert PDF to Image(S)</h2>
 
-    <p style="color: #666;">
-        Convert PDF pages into high-quality images.
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Convert each page of your PDF into high-quality image files for easy sharing or editing." %}
 
     {% include "tools/components/spinner.html" %}
 

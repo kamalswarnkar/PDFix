@@ -45,9 +45,7 @@
 {% block content %}
     <h2>Convert Image(s) to PDF</h2>
 
-    <p style="color:#666;">
-        Convert JPG, PNG or other images into a single PDF file.
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Convert images such as JPG or PNG files into a single PDF document quickly and easily." %}
 
     {% include "tools/components/spinner.html" %}
 

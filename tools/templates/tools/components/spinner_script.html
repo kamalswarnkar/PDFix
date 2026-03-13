@@ -11,6 +11,22 @@
                 button.disabled = true
                 button.innerText = "Processing..."
             }
+
+            const checkDownload = setInterval(function(){
+                if(document.cookie.indexOf("fileDownload=true") !== -1){
+                    loader.style.display = "none"
+
+                    if(button){
+                        button.disabled = false
+                        button.innerText = "Submit"
+                    }
+
+                    document.cookie = "fileDownload=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+
+                    clearInterval(checkDownload)
+                }
+
+            }, 500)
         })
     }
 </script>

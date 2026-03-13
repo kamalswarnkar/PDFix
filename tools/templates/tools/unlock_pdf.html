@@ -43,9 +43,7 @@
 {% block content %}
     <h2>Remove Password from PDF</h2>
 
-    <p style="color: #666;">
-        Remove the password protection from your PDF file.
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Remove password protection from a PDF file if you know the correct password." %}
 
     {% include "tools/components/spinner.html" %}
 

@@ -6,9 +6,7 @@
 {% block content %}
     <h2>Compress PDF to 100KB</h2>
 
-    <p style="color: #666;">
-        Compress your PDF to approximately 100KB
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Compress your PDF file to approximately 100KB for easy submission on websites and forms that require strict file size limits." %}
 
     {% include "tools/components/spinner.html" %}
 

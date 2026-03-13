@@ -43,9 +43,7 @@
 {% block content %}
     <h2>Password Protect PDF</h2>
 
-    <p style="color: #666;">
-        Add a password to protect your PDF file.
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Add a password to your PDF file to protect it from unauthorized viewing or editing." %}
 
     {% include "tools/components/spinner.html" %}
 

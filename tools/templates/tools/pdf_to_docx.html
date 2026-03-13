@@ -26,9 +26,7 @@
 {% block content %}
     <h2>PDF to DOCX</h2>
 
-    <p style="color: #666;">
-        Convert PDF files into editable Microsoft Word documents.
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Convert PDF documents into editable Word files for easier modification and editing." %}
 
     {% include "tools/components/spinner.html" %}
 

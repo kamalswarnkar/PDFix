@@ -45,7 +45,11 @@ def split_pdf_view(request):
         zipfilename = split_pdf(file)
         file_path = os.path.join(settings.MEDIA_ROOT, zipfilename)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=zipfilename)
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=zipfilename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     
     return render(request, "tools/split_pdf.html")
 
@@ -57,7 +61,11 @@ def compress_pdf_view(request):
         compressed_filename = compress_pdf(file)
         file_path = os.path.join(settings.MEDIA_ROOT, compressed_filename)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True)
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=compressed_filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     return render(request, "tools/compress_pdf.html")
 
 def compress_100kb_view(request):
@@ -71,11 +79,11 @@ def compress_100kb_view(request):
 
         file_path = os.path.join(settings.MEDIA_ROOT, compressed_filename)
 
-        return FileResponse(
-            open(file_path, "rb"),
-            as_attachment=True,
-            filename=compressed_filename
-        )
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=compressed_filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
 
     return render(request, "tools/compress_100kb.html")
 
@@ -91,7 +99,11 @@ def extract_pages_view(request):
 
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     
     return render(request, "tools/extract_pages.html")
 
@@ -135,7 +147,11 @@ def pdf_to_docx_view(request):
         file_name = pdf_to_docx(file)
         file_path = os.path.join(settings.MEDIA_ROOT, file_name)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=file_name)
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=file_name)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     
     return render(request, "tools/pdf_to_docx.html")
 
@@ -147,7 +163,11 @@ def docx_to_pdf_view(request):
         filename = docx_to_pdf(file)
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     
     return render(request, "tools/docx_to_pdf.html")
 
@@ -160,7 +180,11 @@ def rotate_pdf_view(request):
         filename = rotate_pdf(file, angle)
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     
     return render(request, "tools/rotate_pdf.html")
 
@@ -173,7 +197,11 @@ def protect_pdf_view(request):
         filename = protect_pdf(file, pwd)
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     
     return render(request, "tools/protect_pdf.html")
 
@@ -186,7 +214,11 @@ def unlock_pdf_view(request):
         filename = unlock_pdf(file, pwd)
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     
     return render(request, "tools/unlock_pdf.html")
 
@@ -209,6 +241,10 @@ def reorder_pdf_view(request):
             })
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-        return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+        response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
+
+        response.set_cookie("fileDownload", "true")
+
+        return response
     
     return render(request, "tools/reorder_pdf.html")

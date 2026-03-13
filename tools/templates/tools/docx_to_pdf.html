@@ -26,9 +26,7 @@
 {% block content %}
     <h2>DOCX to PDF</h2>
 
-    <p style="color: #666;">
-        Convert Microsoft Word documents into PDF files.
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Convert Word documents (DOCX) into professional PDF files while preserving formatting." %}
 
     {% include "tools/components/spinner.html" %}
 

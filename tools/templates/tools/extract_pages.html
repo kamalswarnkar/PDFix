@@ -6,9 +6,7 @@
 {% block content %}
     <h2>Extract Pages from PDF</h2>
 
-    <p style="color: #666;">
-        Extract specific pages from your PDF
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Select and extract specific pages from a PDF document to create a new file containing only the pages you need." %}
 
     {% include "tools/components/spinner.html" %}
 

@@ -44,9 +44,7 @@
 {% block content %}
     <h2>Reorder PDF Pages</h2>
 
-    <p style="color: #666;">
-        Drag and Rearrange the order of pages.
-    </p>
+    {% include "tools/components/tool_desc.html" with text="Rearrange the order of pages in your PDF by dragging them into the desired sequence." %}
 
     {% include "tools/components/spinner.html" %}
 

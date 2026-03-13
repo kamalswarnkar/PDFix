@@ -28,10 +28,22 @@
         }
 
         .logo{
+            display:flex;
+            align-items:center;
+            gap:10px;
             font-size:22px;
             font-weight:bold;
             text-decoration:none;
             color:#e5322d;
+        }
+
+        .logo img{
+            height:26px;
+            width:auto;
+        }
+
+        .logo span{
+            font-weight: 700;
         }
 
         .container{
@@ -88,10 +100,12 @@
             color:black;
             background:white;
             transition:0.2s;
+            cursor: pointer;
         }
 
         .tool-card:hover{
             box-shadow:0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
         }
 
         footer{
@@ -107,7 +121,10 @@
 <body>
     <header>
         <div class="header-container">
-            <a class="logo" href="/">PDFix</a>
+            <a class="logo" href="/">
+                <img src="{% static 'logo.png' %}" alt="PDFix logo">
+                <span>PDFix</span>
+            </a>
         </div>
     </header>
 
