@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>http://127.0.0.1:8000/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/merge-pdf/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/split-pdf/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/compress-pdf/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/compress-pdf-100kb/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/extract-pages/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/image-to-pdf/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/pdf-to-image/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/rotate-pdf/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/protect-pdf/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/unlock-pdf/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/reorder-pdf/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/docx-to-pdf/</loc>
+    </url>
+
+    <url>
+        <loc>http://127.0.0.1:8000/pdf-to-docx/</loc>
+    </url>
+</urlset>

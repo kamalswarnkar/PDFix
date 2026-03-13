@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import TemplateView
 from . import views
 
 urlpatterns = [
@@ -15,5 +16,7 @@ urlpatterns = [
     path("rotate-pdf/", views.rotate_pdf_view, name="rotate_pdf"),
     path("protect-pdf/", views.protect_pdf_view, name="protect_pdf"),
     path("unlock-pdf/", views.unlock_pdf_view, name="unlock_pdf"),
-    path("reorder-pdf/", views.reorder_pdf_view, name="reorder_pdf")
+    path("reorder-pdf/", views.reorder_pdf_view, name="reorder_pdf"),
+    path("sitemap.xml", TemplateView.as_view(template_name="sitemap.xml", content_type="application/xml")),
+    path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
 ]
