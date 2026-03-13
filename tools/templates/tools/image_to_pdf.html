@@ -1,38 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image to PDF</title>
+{% extends "tools/base.html" %}
+{% block title %}Image to PDF - PDFix{% endblock %}
+{% block head %}
+    {% include "tools/components/spinner_style.html" %}
     <style>
         #previewContainer{
             display:flex;
             gap:15px;
             flex-wrap:wrap;
-        }       
+            margin-top:20px;
+            justify-content:center;
+        }
 
         .image-card{
             border:1px solid #ddd;
             padding:10px;
+            border-radius:8px;
+            background:white;
+            width:140px;
             cursor:grab;
         }
+
+        .image-card img{
+            width:100%;
+            height: auto;
+            border-radius:4px;
+        }
+
+        .image-card button{
+            margin-top:5px;
+        }
+
+        .drop-zone{
+            max-width: 600px;
+            margin: auto;
+        }
+
+        #statusMessage{
+            font-size:13px;
+            color:#666;
+            margin-top:10px;
+        }
     </style>
-</head>
-<body>
+{% endblock %}
+{% block content %}
     <h2>Convert Image(s) to PDF</h2>
+
+    <p style="color:#666;">
+        Convert JPG, PNG or other images into a single PDF file.
+    </p>
+
+    {% include "tools/components/spinner.html" %}
 
     <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        <input type="file" id="imageInput" name="images" multiple accept="image/*" required>
-        <br><br>
+        {% include "tools/components/uploader.html" with input_name="images" multiple=True %}
+        <br>
         <div id="previewContainer"></div>
+        <p id="statusMessage">Upload images, then drag the previews to set their order in the PDF.</p>
+        <br>
         <button type="submit">Convert to PDF</button>
     </form>
-
+    {% include "tools/components/uploader_script.html" %}
+    {% include "tools/components/spinner_script.html" %}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script>
-        const input = document.getElementById("imageInput");
+        const input = document.getElementById("fileInput");
         const container = document.getElementById("previewContainer");
+        const statusMessage = document.getElementById("statusMessage");
 
         let filesArray = [];
 
@@ -43,14 +77,22 @@
 
         function renderImages(){
             container.innerHTML = "";
+
+             if(!filesArray.length){
+                statusMessage.textContent = "Upload images, then drag the previews to set their order in the PDF.";
+                return;
+            }
+
+            statusMessage.textContent = "Drag the image cards to reorder them before converting.";
+
             filesArray.forEach((file, index)=>{
                 const reader = new FileReader();
                 reader.onload = function(e){
                     const div = document.createElement("div");
                     div.className = "image-card";
-                    div.dataset.index = index;
+                    div.dataset.name = file.name;
 
-                    div.innerHTML = '<img src="${e.target.result}" width="100"> <p>${file.name}</p>';
+                    div.innerHTML = `<img src="${e.target.result}" width="100"> <p>${file.name}</p>`;
 
                     container.appendChild(div);
                 }
@@ -64,7 +106,8 @@
                 const newOrder = [];
 
                 document.querySelectorAll(".image-card").forEach(card=>{
-                    newOrder.push(filesArray[card.dataset.index]);
+                    const file = filesArray.find(f => f.name === card.dataset.name);
+                    newOrder.push(file);
                 })
 
                 filesArray = newOrder;
@@ -81,5 +124,4 @@
             input.files = dataTransfer.files
         });
     </script>
-</body>
-</html>
+{% endblock %}

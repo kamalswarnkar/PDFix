@@ -1,205 +1,209 @@
 {% extends "tools/base.html" %}
-
 {% block title %}Reorder PDF Pages - PDFix{% endblock %}
-
 {% block head %}
-<style>
-    #previewContainer{
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 20px;
-    }
+    {% include "tools/components/spinner_style.html" %}
+    <style>
+        #previewContainer{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
 
-    .page-card{
-        width: 120px;
-        border: 1px solid #ddd;
-        padding: 5px;
-        border-radius: 6px;
-        background: white;
-        cursor: grab;
-    }
+        .page-card{
+            width: 120px;
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 6px;
+            background: white;
+            cursor: grab;
+        }
 
-    .page-card canvas{
-        width: 100%;
-        height: auto;
-    }
+        .page-card canvas{
+            width: 100%;
+            height: auto;
+        }
 
-    #statusMessage{
-        font-size: 13px;
-        margin-top: 10px;
-        color: #666;
-    }
+        #statusMessage{
+            font-size: 13px;
+            margin-top: 10px;
+            color: #666;
+        }
 
-    #statusMessage.error{
-        color: #c0392b;
-    }
+        #statusMessage.error{
+            color: #c0392b;
+        }
 
-    #serverError{
-        font-size: 13px;
-        color: #c0392b;
-    }
-</style>
+        #serverError{
+            font-size: 13px;
+            color: #c0392b;
+        }
+    </style>
 {% endblock %}
-
 {% block content %}
+    <h2>Reorder PDF Pages</h2>
 
-<h2>Reorder PDF Pages</h2>
+    <p style="color: #666;">
+        Drag and Rearrange the order of pages.
+    </p>
 
-<form method="post" enctype="multipart/form-data" id="reorderForm">
-    {% csrf_token %}
-    {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
-    {% if error %}
-    <p id="serverError" class="error">{{ error }}</p>
-    {% endif %}
-    <br>
-    <div id="previewContainer"></div>
-    <p id="statusMessage">Upload a PDF, then drag the page previews to reorder them.</p>
-    <br>
-    <input type="hidden" name="order" id="orderInput">
+    {% include "tools/components/spinner.html" %}
 
-    <br>
+    <form method="post" enctype="multipart/form-data" id="reorderForm">
+        {% csrf_token %}
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        {% if error %}
+        <p id="serverError" class="error">{{ error }}</p>
+        {% endif %}
+        <br>
+        <div id="previewContainer"></div>
+        <p id="statusMessage">Upload a PDF, then drag the page previews to reorder them.</p>
+        <br>
+        <input type="hidden" name="order" id="orderInput">
 
-    <button type="submit">Reorder Pages</button>
-</form>
-{% include "tools/components/uploader_script.html" %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+        <br>
 
-<script>
+        <button type="submit">Reorder Pages</button>
+    </form>
+    {% include "tools/components/uploader_script.html" %}
+    {% include "tools/components/spinner_script.html" %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    <script>
 
-    const reorderInput = document.getElementById("fileInput");
-    const previewContainer = document.getElementById("previewContainer");
-    const orderInput = document.getElementById("orderInput");
-    const reorderForm = document.getElementById("reorderForm");
-    const statusMessage = document.getElementById("statusMessage");
-    const reorderDropZone = document.getElementById("dropZone");
-    let sortable = null;
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-    reorderInput.accept = ".pdf";
+        const reorderInput = document.getElementById("fileInput");
+        const previewContainer = document.getElementById("previewContainer");
+        const orderInput = document.getElementById("orderInput");
+        const reorderForm = document.getElementById("reorderForm");
+        const statusMessage = document.getElementById("statusMessage");
+        const reorderDropZone = document.getElementById("dropZone");
+        let sortable = null;
 
-    reorderInput.addEventListener("change", function(){
+        reorderInput.accept = ".pdf";
 
-        loadSelectedFile();
+        reorderInput.addEventListener("change", function(){
 
-    });
-
-    async function loadSelectedFile(){
-
-        const file = reorderInput.files[0];
-
-        previewContainer.innerHTML = "";
-        orderInput.value = "";
-
-        if(!file){
-            statusMessage.classList.remove("error");
-            statusMessage.textContent = "Upload a PDF, then drag the page previews to reorder them.";
-            return;
-        }
-
-        if(!file.name.toLowerCase().endsWith(".pdf")){
-            statusMessage.classList.add("error");
-            statusMessage.textContent = "Please choose a valid PDF file.";
-            return;
-        }
-
-        const reader = new FileReader();
-
-        reader.onload = async function(e){
-            try{
-                const typedarray = new Uint8Array(e.target.result);
-                await renderPDF(typedarray);
-                statusMessage.classList.remove("error");
-                statusMessage.textContent = "Drag the page previews to set the new order.";
-            }catch(error){
-                previewContainer.innerHTML = "";
-                orderInput.value = "";
-                statusMessage.classList.add("error");
-                statusMessage.textContent = "Unable to load this PDF. Please try a different file.";
-            }
-        };
-
-        reader.readAsArrayBuffer(file);
-    }
-
-    async function renderPDF(data){
-
-        previewContainer.innerHTML = "";
-
-        const pdf = await pdfjsLib.getDocument(data).promise;
-
-        for(let i=1;i<=pdf.numPages;i++){
-
-            const page = await pdf.getPage(i);
-
-            const viewport = page.getViewport({scale:0.3});
-
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            await page.render({
-                canvasContext: ctx,
-                viewport: viewport
-            }).promise;
-
-            const card = document.createElement("div");
-
-            card.className = "page-card";
-            card.dataset.page = i;
-
-            card.appendChild(canvas);
-
-            previewContainer.appendChild(card);
-
-        }
-
-        if(sortable){
-            sortable.destroy();
-        }
-
-        sortable = new Sortable(previewContainer,{
-            animation:150,
-            onEnd:updateOrder
-        });
-
-        updateOrder();
-    }
-
-    function updateOrder(){
-
-        const order = [];
-
-        document.querySelectorAll(".page-card").forEach(card=>{
-            order.push(card.dataset.page);
-        });
-
-        orderInput.value = order.join(",");
-
-    }
-
-    reorderDropZone.addEventListener("drop", function(){
-
-        setTimeout(function(){
             loadSelectedFile();
 
-        }, 100)
+        });
 
-    })
+        async function loadSelectedFile(){
 
-    reorderForm.addEventListener("submit", function(e){
-        if(!reorderInput.files.length || !orderInput.value){
-            e.preventDefault();
-            statusMessage.classList.add("error");
-            statusMessage.textContent = "Upload a PDF and wait for the page previews before submitting.";
+            const file = reorderInput.files[0];
+
+            previewContainer.innerHTML = "";
+            orderInput.value = "";
+
+            if(!file){
+                statusMessage.classList.remove("error");
+                statusMessage.textContent = "Upload a PDF, then drag the page previews to reorder them.";
+                return;
+            }
+
+            if(!file.name.toLowerCase().endsWith(".pdf")){
+                statusMessage.classList.add("error");
+                statusMessage.textContent = "Please choose a valid PDF file.";
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = async function(e){
+                try{
+                    const typedarray = new Uint8Array(e.target.result);
+                    await renderPDF(typedarray);
+                    statusMessage.classList.remove("error");
+                    statusMessage.textContent = "Drag the page previews to set the new order.";
+                }catch(error){
+                    previewContainer.innerHTML = "";
+                    orderInput.value = "";
+                    statusMessage.classList.add("error");
+                    statusMessage.textContent = "Unable to load this PDF. Please try a different file.";
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
         }
-    })
 
-</script>
+        async function renderPDF(data){
+
+            previewContainer.innerHTML = "";
+
+            const pdf = await pdfjsLib.getDocument(data).promise;
+
+            for(let i=1;i<=pdf.numPages;i++){
+
+                const page = await pdf.getPage(i);
+
+                const viewport = page.getViewport({scale:0.3});
+
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                await page.render({
+                    canvasContext: ctx,
+                    viewport: viewport
+                }).promise;
+
+                const card = document.createElement("div");
+
+                card.className = "page-card";
+                card.dataset.page = i;
+
+                card.appendChild(canvas);
+
+                previewContainer.appendChild(card);
+
+            }
+
+            if(sortable){
+                sortable.destroy();
+            }
+
+            sortable = new Sortable(previewContainer,{
+                animation:150,
+                onEnd:updateOrder
+            });
+
+            updateOrder();
+        }
+
+        function updateOrder(){
+
+            const order = [];
+
+            document.querySelectorAll(".page-card").forEach(card=>{
+                order.push(card.dataset.page);
+            });
+
+            orderInput.value = order.join(",");
+
+        }
+
+        reorderDropZone.addEventListener("drop", function(){
+
+            setTimeout(function(){
+                loadSelectedFile();
+
+            }, 100)
+
+        })
+
+        reorderForm.addEventListener("submit", function(e){
+            if(!reorderInput.files.length || !orderInput.value){
+                e.preventDefault();
+                statusMessage.classList.add("error");
+                statusMessage.textContent = "Upload a PDF and wait for the page previews before submitting.";
+            }
+        })
+
+    </script>
 {% endblock %}

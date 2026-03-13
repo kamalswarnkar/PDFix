@@ -1,17 +1,87 @@
 {% extends "tools/base.html" %}
-
 {% block title %}Protect PDF - PDFix{% endblock %}
+{% block head %}
+    {% include "tools/components/spinner_style.html" %}
+    <style>
+        .password-field{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            margin-top:10px;
+        }
 
+        .password-field input{
+            padding:10px 12px;
+            min-width:260px;
+        }
+
+        .toggle-password{
+            border:1px solid #ccc;
+            background:#fff;
+            border-radius:6px;
+            width:42px;
+            height:42px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+        }
+
+        .toggle-password.active{
+            border-color:#dc2626;
+            background:#fee2e2;
+            color:#dc2626;
+        }
+
+        .toggle-password span{
+            font-size:20px;
+            line-height:1;
+        }
+    </style>
+{% endblock %}
 {% block content %}
-<h2>Password Protect PDF</h2>
+    <h2>Password Protect PDF</h2>
 
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
-    <br><br>
-    <input type="password" name="pwd">
-    <br><br>
-    <button type="submit">Protect</button>
-</form>
-{% include "tools/components/uploader_script.html" %}
+    <p style="color: #666;">
+        Add a password to protect your PDF file.
+    </p>
+
+    {% include "tools/components/spinner.html" %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        <br>
+        <div class="password-field">
+            <input type="password" id="passwordInput" name="pwd" placeholder="Enter password" required>
+            <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">
+                <span id="eyeIcon">👁</span>
+            </button>
+        </div>
+        <br><br>
+        <button type="submit">Protect</button>
+    </form>
+    {% include "tools/components/uploader_script.html" %}
+    {% include "tools/components/spinner_script.html" %}
+    <script>
+        const passwordInput = document.getElementById("passwordInput");
+        const togglePassword = document.getElementById("togglePassword");
+        const eyeIcon = document.getElementById("eyeIcon");
+
+        togglePassword.addEventListener("click", function(){
+            const isHidden = passwordInput.type === "password";
+
+            passwordInput.type = isHidden ? "text" : "password";
+            eyeIcon.textContent = "👁";
+
+            if(isHidden){
+                togglePassword.classList.add("active");
+            }else{
+                togglePassword.classList.remove("active");
+            }
+
+            togglePassword.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+        });
+    </script>
 {% endblock %}

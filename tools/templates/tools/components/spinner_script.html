@@ -1,0 +1,16 @@
+<script>
+    const form = document.querySelector("form")
+    const loader = document.getElementById("loader")
+    const button = document.querySelector("button")
+
+    if(form){
+        form.addEventListener("submit", function(){
+            loader.style.display = "block"
+
+            if(button){
+                button.disabled = true
+                button.innerText = "Processing..."
+            }
+        })
+    }
+</script>

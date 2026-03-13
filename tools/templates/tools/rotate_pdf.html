@@ -1,21 +1,29 @@
 {% extends "tools/base.html" %}
-
 {% block title %}Rotate PDF - PDFix{% endblock %}
-
+{% block head %}
+    {% include "tools/components/spinner_style.html" %}
+{% endblock %}
 {% block content %}
-<h2>Rotate PDF</h2>
+    <h2>Rotate PDF</h2>
 
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
-    <br><br>
-    <select name="angle">
-        <option value="90">Rotate 90°</option>
-        <option value="180">Rotate 180°</option>
-        <option value="270">Rotate 270°</option>
-    </select>
-    <br><br>
-    <button type="submit">Rotate</button>
-</form>
-{% include "tools/components/uploader_script.html" %}
+    <p style="color: #666;">
+        Rotate pages in your PDF file easily.
+    </p>
+
+    {% include "tools/components/spinner.html" %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        <br>
+        <select name="angle" required>
+            <option value="90">Rotate 90°</option>
+            <option value="180">Rotate 180°</option>
+            <option value="270">Rotate 270°</option>
+        </select>
+        <br><br>
+        <button type="submit">Rotate</button>
+    </form>
+    {% include "tools/components/uploader_script.html" %}
+    {% include "tools/components/spinner_script.html" %}
 {% endblock %}

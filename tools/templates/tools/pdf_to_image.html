@@ -1,33 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF to Image - PDFix</title>
-    <style>
-        .drop-zone{
-            width:400px;
-            margin:auto;
-            margin-top:40px;
-            padding:40px;
-            border:2px dashed #aaa;
-            border-radius:10px;
-            cursor:pointer;
-        }
-
-        .drop-zone.dragover{
-            background:#eef3ff;
-        }
-    </style>
-</head>
-<body>
+{% extends "tools/base.html" %}
+{% block title %}PDF to Image{% endblock %}
+{% block head %}
+    {% include "tools/components/spinner_style.html" %}
+{% endblock %}
+{% block content %}
     <h2>Convert PDF to Image(S)</h2>
+
+    <p style="color: #666;">
+        Convert PDF pages into high-quality images.
+    </p>
+
+    {% include "tools/components/spinner.html" %}
+
     <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
         {% include "tools/components/uploader.html" with input_name="files" multiple=True %}
-        <br><br>
+        <br>
         <button type="submit" id="submitBtn">Convert</button>
     </form>
     {% include "tools/components/uploader_script.html" %}
-</body>
-</html>
+    {% include "tools/components/spinner_script.html" %}
+{% endblock %}

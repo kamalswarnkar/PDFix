@@ -1,16 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extract Pages - PDFix</title>
-</head>
-<body>
+{% extends "tools/base.html" %}
+{% block title %}Extract Pages - PDFix{% endblock %}
+{% block head %}
+    {% include "tools/components/spinner_style.html" %}
+{% endblock %}
+{% block content %}
     <h2>Extract Pages from PDF</h2>
+
+    <p style="color: #666;">
+        Extract specific pages from your PDF
+    </p>
+
+    {% include "tools/components/spinner.html" %}
+
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="file" name="file" required>
-        <br><br>
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        <br>
         <label>Start Page</label>
         <input type="number" name="start" required>
         <br><br>
@@ -19,5 +24,6 @@
         <br><br>
         <button type="submit">Extract Pages</button>
     </form>
-</body>
-</html>
+    {% include "tools/components/uploader_script.html" %}
+    {% include "tools/components/spinner_script.html" %}
+{% endblock %}

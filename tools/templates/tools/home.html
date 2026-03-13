@@ -1,65 +1,23 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}?v=2">
-    <title>PDFix</title>
-    <style>
-        body{
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f6f9
-        }
+{% extends "tools/base.html" %}
+{% block title %}PDFix - Free Online PDF Tools{% endblock %}
+{% block content %}
+<h1>Free Online PDF Tools</h1>
 
-        h1{
-            margin-top: 40px;
-        }
+<p>Merge, split, compress, convert and edit PDF files easily.</p>
 
-        .container{
-            width: 800px;
-            margin: auto;
-            margin-top: 40px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .card{
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-decoration: none;
-            color: black;
-            font-size: 18px;
-        }
-
-        .card:hover{
-            background: #eef3ff;
-        }
-    </style>
-</head>
-
-<body>
-
-    <h1>Welcome to PDFix</h1>
-    <p>
-        Simple Tools to work with PDFs
-    </p>
-
-    <div class="container">
-        <a class="card" href="/merge-pdf/">Merge PDF</a>
-        <a class="card" href="/split-pdf/">Split PDF</a>
-        <a class="card" href="/compress-pdf/">Compress PDF</a>
-        <a class="card" href="/compress-pdf-100kb/">Compress PDF to 100KB</a>
-        <a class="card" href="/extract-pages/">Extract Pages</a>
-        <a class="card" href="/image-to-pdf/">Image to PDF</a>
-        <a class="card" href="/pdf-to-image/">PDF to Image</a>
-        <a class="card" href="/pdf-to-docx/">PDF to DOCX</a>
-        <a class="card" href="/docx-to-pdf/">DOCX to PDF</a>
-        <a class="card" href="/rotate-pdf/">Rotate PDF</a>
-        <a class="card" href="/protect-pdf/">Protect PDF</a>
-        <a class="card" href="/unlock-pdf/">Unlock PDF</a>
-        <a class="card" href="/reorder-pdf/">Reorder PDF</a>
-    </div>
-</body>
-</html>
+<div class="tools-grid">
+    <a class="tool-card" href="/merge-pdf/">Merge PDF</a>
+    <a class="tool-card" href="/split-pdf/">Split PDF</a>
+    <a class="tool-card" href="/compress-pdf/">Compress PDF</a>
+    <a class="tool-card" href="/compress-pdf-100kb/">Compress to 100KB</a>
+    <a class="tool-card" href="/extract-pages/">Extract Pages</a>
+    <a class="tool-card" href="/pdf-to-image/">PDF to Image</a>
+    <a class="tool-card" href="/image-to-pdf/">Image to PDF</a>
+    <a class="tool-card" href="/rotate-pdf/">Rotate PDF</a>
+    <a class="tool-card" href="/protect-pdf/">Protect PDF</a>
+    <a class="tool-card" href="/unlock-pdf/">Unlock PDF</a>
+    <a class="tool-card" href="/reorder-pdf/">Reorder Pages</a>
+    <a class="tool-card" href="/docx-to-pdf/">DOCX to PDF</a>
+    <a class="tool-card" href="/pdf-to-docx/">PDF to DOCX</a>
+</div>
+{% endblock %}

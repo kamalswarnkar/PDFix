@@ -1,26 +1,23 @@
-<!DOCTYPE html>
-<html>
+{% extends "tools/base.html" %}
+{% block title %}Compress PDF to 100KB - PDFix{% endblock %}
+{% block head %}
+    {% include "tools/components/spinner_style.html" %}
+{% endblock %}
+{% block content %}
+    <h2>Compress PDF to 100KB</h2>
 
-<head>
-<title>Compress PDF to 100KB - PDFix</title>
-</head>
+    <p style="color: #666;">
+        Compress your PDF to approximately 100KB
+    </p>
 
-<body>
+    {% include "tools/components/spinner.html" %}
 
-<h2>Compress PDF to 100KB</h2>
-
-<form method="post" enctype="multipart/form-data">
-
-{% csrf_token %}
-
-<input type="file" name="file" required>
-
-<br><br>
-
-<button type="submit">Compress to 100KB</button>
-
-</form>
-
-</body>
-
-</html>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        <br>
+        <button type="submit">Compress to 100KB</button>
+    </form>
+    {% include "tools/components/uploader_script.html" %}
+    {% include "tools/components/spinner_script.html" %}
+{% endblock %}
