@@ -248,3 +248,12 @@ def reorder_pdf_view(request):
         return response
     
     return render(request, "tools/reorder_pdf.html")
+
+def privacy_view(request):
+    return render(request, "tools/privacy.html")
+
+def terms_view(request):
+    return render(request, "tools/terms.html")
+
+def about_view(request):
+    return render(request, "tools/about.html")

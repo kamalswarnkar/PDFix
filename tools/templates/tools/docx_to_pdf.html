@@ -2,7 +2,7 @@
 {% block meta_description %}
     Convert Word documents (DOCX) to high quality PDF files quickly using PDFix free online converter.
 {% endblock %}
-{% block title %}DOCX to PDF - PDFix{% endblock %}
+{% block title %}Convert DOCX to PDF Online Free | Word to PDF - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -39,6 +39,8 @@
         <br>
         <button type="submit" id="submitBtn">Convert</button>
     </form>
+
+    {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
     <script>

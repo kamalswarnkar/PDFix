@@ -2,7 +2,7 @@
 {% block meta_description %}
     Compress PDF files to approximately 100KB for easy form submissions and uploads. Free online PDF compression tool by PDFix.
 {% endblock %}
-{% block title %}Compress PDF to 100KB - PDFix{% endblock %}
+{% block title %}Compress PDF to 100KB Online Free - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
@@ -19,6 +19,8 @@
         <br>
         <button type="submit">Compress to 100KB</button>
     </form>
+
+    {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
 {% endblock %}

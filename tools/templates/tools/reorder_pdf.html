@@ -2,7 +2,7 @@
 {% block meta_description %}
     Rearrange the order of pages in your PDF easily using drag and drop with PDFix free online PDF page organizer.
 {% endblock %}
-{% block title %}Reorder PDF Pages - PDFix{% endblock %}
+{% block title %}Reorder PDF Pages Online Free | Organize PDF Pages - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -67,6 +67,8 @@
 
         <button type="submit">Reorder Pages</button>
     </form>
+
+    {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>

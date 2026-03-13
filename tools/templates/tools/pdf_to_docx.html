@@ -2,7 +2,7 @@
 {% block meta_description %}
     Convert Microsoft Word documents (DOCX) into professional PDF files instantly with PDFix free online converter.
 {% endblock %}
-{% block title %}PDF to DOCX - PDFix{% endblock %}
+{% block title %}Convert PDF to Word Online Free | PDF to DOCX - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -39,6 +39,8 @@
         <br>
         <button type="submit" id="submitBtn">Convert</button>
     </form>
+
+    {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
     <script>

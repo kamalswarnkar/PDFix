@@ -2,7 +2,7 @@
 {% block meta_description %}
     Merge multiple PDF files into one document quickly and securely with PDFix. Arrange pages easily and download the combined PDF instantly.
 {% endblock %}
-{% block title %}Merge PDF - PDFix{% endblock %}
+{% block title %}Merge PDF Online Free | Combine PDF Files - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -56,6 +56,7 @@
         <button type="submit" id="submitBtn">Merge</button>
     </form>
     
+    {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>

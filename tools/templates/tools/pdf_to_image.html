@@ -2,7 +2,7 @@
 {% block meta_description %}
     Convert PDF pages into high-quality images such as PNG or JPG using PDFix free online PDF to image converter.
 {% endblock %}  
-{% block title %}PDF to Image{% endblock %}
+{% block title %}Convert PDF to Image Online Free | PDF to PNG/JPG - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
@@ -19,6 +19,8 @@
         <br>
         <button type="submit" id="submitBtn">Convert</button>
     </form>
+
+    {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
 {% endblock %}

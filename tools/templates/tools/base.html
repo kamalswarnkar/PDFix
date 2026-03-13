@@ -8,7 +8,51 @@
     <meta name="keywords" content="pdf tools, merge pdf, split pdf, compress pdf, pdf converter, pdf to docx, docx to pdf">
     <meta name="robots" content="index, follow">
 
+    <script type="application/ld+json">
+        {
+            "@context":"https://schema.org",
+            "@type":"FAQPage",
+            "mainEntity":[
+                {
+                    "@type":"Question",
+                    "name":"Is PDFix free to use?",
+                    "acceptedAnswer":{
+                        "@type":"Answer",
+                        "text":"Yes. All PDFix tools are completely free to use online with no signup required."
+                    }
+                },
+                {
+                    "@type":"Question",
+                    "name":"Are my files secure?",
+                    "acceptedAnswer":{
+                        "@type":"Answer",
+                        "text":"Yes. Files uploaded to PDFix are processed automatically and deleted shortly after processing."
+                    }
+                },
+                {
+                    "@type":"Question",
+                    "name":"Do you store uploaded files?",
+                    "acceptedAnswer":{
+                        "@type":"Answer",
+                        "text":"No. Files are temporarily processed and automatically removed from the server to protect your privacy."
+                    }
+                },
+                {
+                    "@type":"Question",
+                    "name":"Do these tools work on mobile?",
+                    "acceptedAnswer":{
+                        "@type":"Answer",
+                        "text":"Yes. PDFix tools work on desktop, tablet, and mobile browsers."
+                    }
+                }
+            ]
+        }
+    </script>
+
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+
     <link rel="icon" href="{% static 'favicon.ico' %}">
+    
     <style>
         body{
             margin:0;
@@ -111,6 +155,25 @@
             transform: translateY(-2px);
         }
 
+        .faq{
+            margin-top:40px;
+            border-top:1px solid #eee;
+            padding-top:20px;
+        }
+
+        .faq h3{
+            margin-bottom:15px;
+        }
+
+        .faq-item{
+            margin-bottom:15px;
+        }
+
+        .faq-item h4{
+            margin-bottom:5px;
+            font-size:15px;
+        }
+
         footer{
             margin-top: 60px;
             text-align:center;
@@ -136,7 +199,10 @@
     </div>
 
     <footer>
-        PDFix — Free Online PDF Tools
+        PDFix — Free Online PDF Tools<br>
+        <a href="/about/">About</a> |
+        <a href="/privacy/">Privacy Policy</a> |
+        <a href="/terms/">Terms of Service</a>
     </footer>
 </body>
 </html>

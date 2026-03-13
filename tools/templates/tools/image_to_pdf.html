@@ -2,7 +2,7 @@
 {% block meta_description %}
     Convert JPG or PNG images into a single PDF document quickly and securely with PDFix image to PDF converter.
 {% endblock %}
-{% block title %}Image to PDF - PDFix{% endblock %}
+{% block title %}Convert Image to PDF Online Free | JPG, PNG to PDF - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -61,6 +61,8 @@
         <br>
         <button type="submit">Convert to PDF</button>
     </form>
+
+    {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
