@@ -1,0 +1,11 @@
+penv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+.env
+.env.*
+.vscode/
+*.ctl

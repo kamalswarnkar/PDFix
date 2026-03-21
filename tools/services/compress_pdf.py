@@ -2,6 +2,7 @@ from pypdf import PdfReader, PdfWriter
 import os
 import uuid
 import subprocess
+import shutil
 from django.conf import settings
 
 # def compress_pdf(file):
@@ -10,10 +11,10 @@ from django.conf import settings
 
 #     for page in reader.pages:
 #         writer.add_page(page)
-    
+
 #     for page in writer.pages:
 #         page.compress_content_streams()
-    
+
 #     filename = f"{uuid.uuid4()}_compressed.pdf"
 #     os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 #     output_path = os.path.join(settings.MEDIA_ROOT, filename)
@@ -22,6 +23,19 @@ from django.conf import settings
 #         writer.write(f)
 
 #     return filename
+
+def _resolve_ghostscript():
+    for candidate in ("gs", "gswin64c"):
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+
+    windows_fallback = r"C:\Program Files\gs\gs10.06.0\bin\gswin64c.exe"
+    if os.path.exists(windows_fallback):
+        return windows_fallback
+
+    raise RuntimeError("Ghostscript executable not found. Install Ghostscript and ensure 'gs' or 'gswin64c' is in PATH.")
+
 
 def compress_pdf(file):
 
@@ -38,7 +52,7 @@ def compress_pdf(file):
         for chunk in file.chunks():
             f.write(chunk)
 
-    gs_path = r"C:\Program Files\gs\gs10.06.0\bin\gswin64c.exe"
+    gs_path = _resolve_ghostscript()
 
     command = [
         gs_path,

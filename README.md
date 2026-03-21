@@ -1,4 +1,4 @@
-﻿# PDFix
+# PDFix
 
 PDFix is a Django-based web app for common PDF workflows such as merging, splitting, compressing, converting, protecting, unlocking, rotating, extracting, and reordering files. The project is built as a lightweight server-rendered toolkit: users upload files through HTML forms, Django views call focused service modules, processed files are written to `media/`, and the result is streamed back as a download.
 
@@ -121,16 +121,10 @@ source penv/bin/activate
 
 ### 3. Install Python packages
 
-There is no `requirements.txt` committed yet, so install the libraries used by the codebase directly:
+Install dependencies from the committed `requirements.txt`:
 
 ```bash
-pip install django pypdf pillow pdf2image pdf2docx
-```
-
-Depending on your environment, you may also want to save them:
-
-```bash
-pip freeze > requirements.txt
+pip install -r requirements.txt
 ```
 
 ### 4. Install system dependencies
@@ -139,8 +133,7 @@ Some tools rely on executables outside Python:
 
 - Ghostscript
   - Required for `compress-pdf` and `compress-pdf-100kb`
-  - The current code uses a hardcoded Windows path:
-    `C:\Program Files\gs\gs10.06.0\bin\gswin64c.exe`
+  - The code resolves `gs`/`gswin64c` from `PATH` (with a Windows fallback path check).
 - LibreOffice
   - Required for `docx-to-pdf`
   - The code expects `soffice` to be available in `PATH`
@@ -199,7 +192,7 @@ This makes the app simple to run locally, but production deployments may benefit
 
 - The app does not currently define domain models beyond Django defaults, so the database is not central to the product workflow.
 - `tools/tests.py` is still empty, so automated test coverage has not been added yet.
-- `DEBUG = True`, `ALLOWED_HOSTS = ["*"]`, and a hardcoded secret key are present in `config/settings.py`; these should be replaced before production deployment.
+- `DEBUG = False`, `ALLOWED_HOSTS = ["*"]`, and a hardcoded secret key are present in `config/settings.py`; the secret key and host policy should be hardened before production deployment.
 - Compression and DOCX conversion depend on local machine tooling, so portability is limited until those paths/settings are externalized.
 - Most tools trust uploaded input and perform only minimal validation. That is acceptable for a local/demo project, but production use should add stronger validation, error handling, logging, and size limits.
 
@@ -227,3 +220,7 @@ PDFix is a straightforward, modular Django PDF toolkit with:
 - Small reusable frontend components
 
 It is a good base for a personal project, portfolio app, or small utility product, and it has clear next steps if you want to harden it for production.
+
+
+
+

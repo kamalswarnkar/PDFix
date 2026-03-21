@@ -1,6 +1,7 @@
 import os
 import uuid
 import subprocess
+import shutil
 from django.conf import settings
 
 
@@ -17,6 +18,19 @@ def save_best_output(output_filename, output_path, size_kb, best_output_filename
     return best_output_filename, best_output_path, best_size_kb
 
 
+def _resolve_ghostscript():
+    for candidate in ("gs", "gswin64c"):
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+
+    windows_fallback = r"C:\Program Files\gs\gs10.06.0\bin\gswin64c.exe"
+    if os.path.exists(windows_fallback):
+        return windows_fallback
+
+    raise RuntimeError("Ghostscript executable not found. Install Ghostscript and ensure 'gs' or 'gswin64c' is in PATH.")
+
+
 def compress_pdf_to_size(file, target_kb=100):
 
     os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
@@ -28,7 +42,7 @@ def compress_pdf_to_size(file, target_kb=100):
         for chunk in file.chunks():
             f.write(chunk)
 
-    gs_path = r"C:\Program Files\gs\gs10.06.0\bin\gswin64c.exe"
+    gs_path = _resolve_ghostscript()
 
     best_output_filename = None
     best_output_path = None
