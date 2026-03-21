@@ -20,12 +20,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-qb$-(s8nu@$doo*@@joj-jl9_=mznc3sqofe-dsucu)03)p!8&'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", 'django-insecure-qb$-(s8nu@$doo*@@joj-jl9_=mznc3sqofe-dsucu)03)p!8&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ['*']
+
+# Hosts and CSRF origins
+raw_allowed_hosts = os.environ.get("ALLOWED_HOSTS", "*")
+ALLOWED_HOSTS = [host.strip() for host in raw_allowed_hosts.split(",") if host.strip()]
+
+raw_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in raw_csrf_origins.split(",") if origin.strip()]
+
+railway_public_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+if railway_public_domain:
+    railway_origin = f"https://{railway_public_domain}"
+    if railway_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(railway_origin)
+
+# Railway/reverse-proxy HTTPS support
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 
 
 # Application definition
