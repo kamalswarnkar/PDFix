@@ -5,6 +5,26 @@
 {% block title %}Rotate PDF Pages Online Free - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
+    <style>
+        #rotatePreviewArea {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #rotatePreviewCanvas {
+            max-width: 180px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.35s ease;
+            display: block;
+            margin: 10px auto 0 auto;
+        }
+        #rotatePreviewLabel {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+    </style>
 {% endblock %}
 {% block content %}
     <h2>Rotate PDF</h2>
@@ -13,14 +33,24 @@
 
     {% include "tools/components/spinner.html" %}
 
-    <form method="post" enctype="multipart/form-data">
+    {% include "tools/components/error_message.html" %}
+
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False accept_types=".pdf" %}
         <br>
-        <select name="angle" required>
-            <option value="90">Rotate 90°</option>
+        <div id="previewContainer" class="preview-container"></div>
+
+        <div id="rotatePreviewArea" style="display:none;">
+            <canvas id="rotatePreviewCanvas"></canvas>
+            <p id="rotatePreviewLabel">Preview (first page)</p>
+        </div>
+
+        <br>
+        <select name="angle" id="angleSelect" required>
+            <option value="90">Rotate 90° Clockwise</option>
             <option value="180">Rotate 180°</option>
-            <option value="270">Rotate 270°</option>
+            <option value="270">Rotate 90° Counter-clockwise</option>
         </select>
         <br><br>
         <button type="submit">Rotate</button>
@@ -29,4 +59,55 @@
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+        const previewArea = document.getElementById("rotatePreviewArea");
+        const previewCanvas = document.getElementById("rotatePreviewCanvas");
+        const angleSelect = document.getElementById("angleSelect");
+        let renderedPdfPage = null;
+        let renderTask = null;
+
+        // Intercept the default file-card renderer to also kick off PDF preview
+        window.onFilesChanged = function(files) {
+            window.defaultRenderFiles();
+            if (files.length > 0) {
+                loadPreview(files[0]);
+            } else {
+                previewArea.style.display = "none";
+            }
+        };
+
+        async function loadPreview(file) {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const pdf = await pdfjsLib.getDocument(new Uint8Array(e.target.result)).promise;
+                    renderedPdfPage = await pdf.getPage(1);
+                    drawRotated(parseInt(angleSelect.value));
+                    previewArea.style.display = "block";
+                } catch (_) {
+                    previewArea.style.display = "none";
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function drawRotated(angle) {
+            if (!renderedPdfPage) return;
+            const viewport = renderedPdfPage.getViewport({ scale: 0.5, rotation: angle });
+            previewCanvas.width = viewport.width;
+            previewCanvas.height = viewport.height;
+            const ctx = previewCanvas.getContext("2d");
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            if (renderTask) renderTask.cancel();
+            renderTask = renderedPdfPage.render({ canvasContext: ctx, viewport });
+        }
+
+        angleSelect.addEventListener("change", function() {
+            drawRotated(parseInt(this.value));
+        });
+    </script>
 {% endblock %}

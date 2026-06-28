@@ -1,7 +1,6 @@
 <div class="drop-zone" id="dropZone">
-    <p>
-        Drag and Drop Here
-    </p>
-    <p>OR</p>
-    <input type="file" id="fileInput" name="{{ input_name }}" {% if multiple %}multiple{% endif %}  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" required>
+    <div style="font-size:32px;line-height:1;margin-bottom:8px;">📂</div>
+    <p style="margin:0 0 4px 0;font-weight:600;color:#333;">Drag &amp; drop your file here</p>
+    <p style="margin:0;font-size:13px;color:#888;">or <span style="color:#e5322d;font-weight:600;text-decoration:underline;">click to browse files</span></p>
+    <input type="file" id="fileInput" name="{{ input_name }}" {% if multiple %}multiple{% endif %} accept="{{ accept_types|default:'.pdf,.doc,.docx,.png,.jpg,.jpeg' }}" style="display:none">
 </div>

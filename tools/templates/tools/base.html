@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
     <title>{% block title %}PDFix - Free Online PDF Tools{% endblock %}</title>
 
@@ -122,10 +123,15 @@
 
         .drop-zone{
             border:2px dashed #ccc;
-            border-radius:8px;
-            padding:40px;
+            border-radius:10px;
+            padding:28px 20px;
             margin-top:20px;
             cursor:pointer;
+            max-width:480px;
+            margin-left:auto;
+            margin-right:auto;
+            text-align:center;
+            transition:border-color 0.2s, background 0.2s;
         }
 
         .drop-zone.dragover{
@@ -181,6 +187,305 @@
             font-size:14px;
             color:#777;
         }
+
+        /* Reusable File Preview Cards */
+        .preview-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .file-card {
+            position: relative;
+            border: 1px solid #ddd;
+            padding: 15px 10px 10px 10px;
+            border-radius: 8px;
+            background: white;
+            width: 140px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .file-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .file-card .file-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+
+        .file-card.pdf .file-icon { color: #dc2626; }
+        .file-card.word .file-icon { color: #2563eb; }
+        .file-card.image .file-icon { color: #16a34a; }
+        .file-card.generic .file-icon { color: #4b5563; }
+
+        .file-card .file-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin: 5px 0 2px 0;
+            word-break: break-all;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 32px;
+            line-height: 16px;
+        }
+
+        .file-card .file-size {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .file-card .remove-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #dc2626;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            padding: 0;
+            transition: background 0.2s, transform 0.2s;
+            z-index: 10;
+        }
+
+        .file-card .remove-btn:hover {
+            background: #b91c1c;
+            transform: scale(1.1);
+        }
+
+        /* Shared Error/Message Alert System */
+        .error-alert {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 15px auto;
+            max-width: 600px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .error-alert .close-alert {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #b91c1c;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        /* ── Floating feedback / suggestion buttons ── */
+        .float-btn-group {
+            position: fixed;
+            bottom: 24px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 900;
+        }
+
+        .float-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: #e5322d;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, transform 0.15s;
+            padding: 0;
+        }
+
+        .float-btn:hover {
+            background: #c92a26;
+            transform: scale(1.08);
+        }
+
+        /* ── Modal overlay ── */
+        .fb-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fb-overlay.open { display: flex; }
+
+        .fb-modal {
+            background: white;
+            border-radius: 8px;
+            padding: 28px 30px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        .fb-modal h3 {
+            margin: 0 0 16px;
+            font-size: 16px;
+            color: #1f2937;
+        }
+
+        .fb-modal label {
+            display: block;
+            font-size: 13px;
+            color: #374151;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .fb-modal select,
+        .fb-modal textarea {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            padding: 8px 10px;
+            font-size: 13px;
+            font-family: inherit;
+            margin-bottom: 14px;
+            color: #374151;
+        }
+
+        .fb-modal textarea { resize: vertical; min-height: 80px; }
+
+        .fb-modal .fb-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .fb-modal .fb-cancel {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            padding: 8px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .fb-modal .fb-submit {
+            background: #e5322d;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .fb-modal .fb-submit:hover { background: #c92a26; }
+
+        .fb-modal .fb-thankyou {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .fb-modal .fb-thankyou p {
+            font-size: 14px;
+            color: #374151;
+            margin: 8px 0 20px;
+        }
+
+        .fb-close-x {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #9ca3af;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .fb-close-x:hover { color: #374151; }
+
+        .fb-err {
+            color: #b91c1c;
+            font-size: 12px;
+            margin: -10px 0 10px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .header-container {
+                padding: 0 16px;
+            }
+
+            .container {
+                margin: 16px;
+                padding: 20px 18px;
+            }
+
+            .tools-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 12px;
+            }
+
+            .drop-zone {
+                max-width: 100%;
+                padding: 22px 14px;
+            }
+
+            .preview-container {
+                gap: 10px;
+            }
+
+            .file-card {
+                width: 110px;
+            }
+
+            .fb-modal {
+                margin: 16px;
+                max-width: calc(100% - 32px);
+                padding: 22px 18px;
+            }
+        }
     </style>
     {% block head %}{% endblock %}
 </head>
@@ -204,5 +509,160 @@
         <a href="/privacy/">Privacy Policy</a> |
         <a href="/terms/">Terms of Service</a>
     </footer>
+
+    <!-- ── Floating Buttons ── -->
+    <div class="float-btn-group">
+        <button class="float-btn" id="openSuggestionBtn" title="Suggest a feature">💡</button>
+        <button class="float-btn" id="openFeedbackBtn" title="Report a bug">🐛</button>
+    </div>
+
+    <!-- ── Bug Report Modal ── -->
+    <div class="fb-overlay" id="feedbackOverlay">
+        <div class="fb-modal">
+            <button class="fb-close-x" id="closeFeedbackBtn" aria-label="Close">×</button>
+
+            <div id="fbStep1">
+                <h3>🐛 Report a Bug</h3>
+                <label for="fbFeature">Which feature has the issue?</label>
+                <select id="fbFeature">
+                    <option value="">— Select a feature —</option>
+                    <option>Merge PDF</option>
+                    <option>Split PDF</option>
+                    <option>Compress PDF</option>
+                    <option>Compress to Smallest Size</option>
+                    <option>Extract Pages</option>
+                    <option>Image to PDF</option>
+                    <option>PDF to Image</option>
+                    <option>PDF to DOCX</option>
+                    <option>DOCX to PDF</option>
+                    <option>Rotate PDF</option>
+                    <option>Protect PDF</option>
+                    <option>Unlock PDF</option>
+                    <option>Reorder Pages</option>
+                    <option>Other</option>
+                </select>
+
+                <label for="fbIssue">Describe the issue</label>
+                <textarea id="fbIssue" placeholder="What went wrong?"></textarea>
+                <div class="fb-err" id="fbErr"></div>
+
+                <div class="fb-actions">
+                    <button class="fb-cancel" id="closeFeedbackBtn2">Cancel</button>
+                    <button class="fb-submit" id="fbSubmitBtn">Submit</button>
+                </div>
+            </div>
+
+            <div id="fbStep2" class="fb-thankyou" style="display:none;">
+                <p style="font-size:28px; margin-bottom:6px;">✅</p>
+                <h3 style="margin-bottom:6px;">Thank you!</h3>
+                <p>Your bug report has been submitted. We appreciate you helping us improve PDFix.</p>
+                <button class="fb-submit" id="fbDoneBtn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Suggestion Modal ── -->
+    <div class="fb-overlay" id="suggestionOverlay">
+        <div class="fb-modal">
+            <button class="fb-close-x" id="closeSuggestionBtn" aria-label="Close">×</button>
+
+            <div id="sgStep1">
+                <h3>💡 Share a Suggestion</h3>
+                <label for="sgDesc">What would you like to see? (new feature or improvement)</label>
+                <textarea id="sgDesc" placeholder="Describe your suggestion…"></textarea>
+
+                <label for="sgWhy">Why is it needed?</label>
+                <textarea id="sgWhy" placeholder="How would this help you or other users?"></textarea>
+                <div class="fb-err" id="sgErr"></div>
+
+                <div class="fb-actions">
+                    <button class="fb-cancel" id="closeSuggestionBtn2">Cancel</button>
+                    <button class="fb-submit" id="sgSubmitBtn">Submit</button>
+                </div>
+            </div>
+
+            <div id="sgStep2" class="fb-thankyou" style="display:none;">
+                <p style="font-size:28px; margin-bottom:6px;">✅</p>
+                <h3 style="margin-bottom:6px;">Thank you!</h3>
+                <p>Your suggestion has been recorded. We love hearing ideas to make PDFix better!</p>
+                <button class="fb-submit" id="sgDoneBtn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getCsrf() {
+            return document.cookie.split(';').map(c => c.trim())
+                .find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+        }
+
+        // ── Feedback (bug) ──
+        const fbOverlay = document.getElementById('feedbackOverlay');
+        const fbStep1   = document.getElementById('fbStep1');
+        const fbStep2   = document.getElementById('fbStep2');
+        const fbErr     = document.getElementById('fbErr');
+
+        function openFeedback() {
+            fbStep1.style.display = ''; fbStep2.style.display = 'none';
+            fbErr.textContent = ''; fbOverlay.classList.add('open');
+        }
+        function closeFeedback() { fbOverlay.classList.remove('open'); }
+
+        document.getElementById('openFeedbackBtn').addEventListener('click', openFeedback);
+        document.getElementById('closeFeedbackBtn').addEventListener('click', closeFeedback);
+        document.getElementById('closeFeedbackBtn2').addEventListener('click', closeFeedback);
+        document.getElementById('fbDoneBtn').addEventListener('click', closeFeedback);
+        fbOverlay.addEventListener('click', e => { if (e.target === fbOverlay) closeFeedback(); });
+
+        document.getElementById('fbSubmitBtn').addEventListener('click', function() {
+            const feature = document.getElementById('fbFeature').value.trim();
+            const issue   = document.getElementById('fbIssue').value.trim();
+            if (!feature || !issue) { fbErr.textContent = 'Please select a feature and describe the issue.'; return; }
+            fbErr.textContent = '';
+            const data = new FormData();
+            data.append('feature', feature); data.append('issue', issue);
+            fetch('/feedback/submit/', { method: 'POST', headers: {'X-CSRFToken': getCsrf()}, body: data })
+                .then(r => r.json())
+                .then(j => {
+                    if (j.ok) { fbStep1.style.display = 'none'; fbStep2.style.display = ''; }
+                    else { fbErr.textContent = j.error || 'Submission failed. Please try again.'; }
+                })
+                .catch(() => { fbErr.textContent = 'Network error. Please try again.'; });
+        });
+
+        // ── Suggestion ──
+        const sgOverlay = document.getElementById('suggestionOverlay');
+        const sgStep1   = document.getElementById('sgStep1');
+        const sgStep2   = document.getElementById('sgStep2');
+        const sgErr     = document.getElementById('sgErr');
+
+        function openSuggestion() {
+            sgStep1.style.display = ''; sgStep2.style.display = 'none';
+            sgErr.textContent = ''; sgOverlay.classList.add('open');
+        }
+        function closeSuggestion() { sgOverlay.classList.remove('open'); }
+
+        document.getElementById('openSuggestionBtn').addEventListener('click', openSuggestion);
+        document.getElementById('closeSuggestionBtn').addEventListener('click', closeSuggestion);
+        document.getElementById('closeSuggestionBtn2').addEventListener('click', closeSuggestion);
+        document.getElementById('sgDoneBtn').addEventListener('click', closeSuggestion);
+        sgOverlay.addEventListener('click', e => { if (e.target === sgOverlay) closeSuggestion(); });
+
+        document.getElementById('sgSubmitBtn').addEventListener('click', function() {
+            const desc = document.getElementById('sgDesc').value.trim();
+            const why  = document.getElementById('sgWhy').value.trim();
+            if (!desc || !why) { sgErr.textContent = 'Please fill in both fields.'; return; }
+            sgErr.textContent = '';
+            const data = new FormData();
+            data.append('description', desc); data.append('why_needed', why);
+            fetch('/suggestion/submit/', { method: 'POST', headers: {'X-CSRFToken': getCsrf()}, body: data })
+                .then(r => r.json())
+                .then(j => {
+                    if (j.ok) { sgStep1.style.display = 'none'; sgStep2.style.display = ''; }
+                    else { sgErr.textContent = j.error || 'Submission failed. Please try again.'; }
+                })
+                .catch(() => { sgErr.textContent = 'Network error. Please try again.'; });
+        });
+    </script>
 </body>
 </html>

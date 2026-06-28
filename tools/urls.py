@@ -17,9 +17,11 @@ urlpatterns = [
     path("protect-pdf/", views.protect_pdf_view, name="protect_pdf"),
     path("unlock-pdf/", views.unlock_pdf_view, name="unlock_pdf"),
     path("reorder-pdf/", views.reorder_pdf_view, name="reorder_pdf"),
+    path("feedback/submit/", views.submit_feedback, name="submit_feedback"),
+    path("suggestion/submit/", views.submit_suggestion, name="submit_suggestion"),
     path("sitemap.xml", TemplateView.as_view(template_name="sitemap.xml", content_type="application/xml")),
     path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
     path("privacy/", views.privacy_view),
     path("terms/", views.terms_view),
     path("about/", views.about_view),
-]
+]

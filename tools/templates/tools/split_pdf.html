@@ -13,9 +13,13 @@
 
     {% include "tools/components/spinner.html" %}
 
-    <form method="post", enctype="multipart/form-data">
+    {% include "tools/components/error_message.html" %}
+
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False accept_types=".pdf" %}
+        <br>
+        <div id="previewContainer" class="preview-container"></div>
         <br>
         <button type="submit">Split PDF</button>
     </form>

@@ -30,10 +30,6 @@
             width:100%;
         }
 
-        .drop-zone{
-            max-width: 600px;
-            margin: auto;
-        }
 
         #submitBtn{
             margin-top: 20px;
@@ -47,11 +43,13 @@
 
     {% include "tools/components/spinner.html" %}
 
+    {% include "tools/components/error_message.html" %}
+
     <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        {% include "tools/components/uploader.html" with input_name="files" multiple=True %}
+        {% include "tools/components/uploader.html" with input_name="files" multiple=True accept_types=".pdf" %}
         <br>
-        <div id="previewContainer"></div>
+        <div id="previewContainer" class="preview-container"></div>
         <br>
         <button type="submit" id="submitBtn">Merge</button>
     </form>
@@ -59,124 +57,26 @@
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-    <script>
-        if(typeof pdfjsLib !== "undefined"){
-            pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-        }
-    </script>
-
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <script>
-
-        const input = document.getElementById("fileInput")
-        const container = document.getElementById("previewContainer")
-
-        let filesArray = []
-
-        input.addEventListener("change", function(){
-
-            filesArray = Array.from(input.files)
-
-            renderFiles()
-
-        })
-
-        function renderFiles(){
-
-            container.innerHTML = ""
-
-            filesArray.forEach((file, index)=>{
-
-                const card = document.createElement("div")
-
-                card.className = "file-card"
-                card.dataset.name = file.name
-
-                card.innerHTML = `
-                    <canvas></canvas>
-                    <p style="font-size:12px;">${file.name}</p>
-                    <button type="button" onclick="removeFile(${index})">Remove</button>
-                `
-
-                container.appendChild(card)
-
-                const canvas = card.querySelector("canvas")
-                const ctx = canvas.getContext("2d")
-
-                const reader = new FileReader()
-
-                reader.onload = function(e){
-
-                    const typedarray = new Uint8Array(e.target.result)
-
-                    pdfjsLib.getDocument(typedarray).promise.then(function(pdf){
-
-                        pdf.getPage(1).then(function(page){
-
-                            const viewport = page.getViewport({scale:0.3})
-
-                            canvas.width = viewport.width
-                            canvas.height = viewport.height
-
-                            page.render({
-                                canvasContext: ctx,
-                                viewport: viewport
-                            })
-
-                        })
-
-                    })
-
+        const container = document.getElementById("previewContainer");
+        if (container) {
+            new Sortable(container, {
+                animation: 150,
+                onEnd: function() {
+                    const reordered = [];
+                    document.querySelectorAll(".file-card").forEach(card => {
+                        const name = card.dataset.name;
+                        const file = window.filesArray.find(f => f.name === name);
+                        if (file) {
+                            reordered.push(file);
+                        }
+                    });
+                    window.filesArray = reordered;
                 }
-
-                reader.readAsArrayBuffer(file)
-
-            })
-
+            });
         }
-
-    
-
-        function removeFile(index){
-
-            filesArray.splice(index,1)
-
-            renderFiles()
-
-        }
-
-        new Sortable(container,{
-            animation:150,
-            onEnd:function(){
-
-                const reordered = []
-
-                document.querySelectorAll(".file-card").forEach(card=>{
-                    const name = card.dataset.name
-                    const file = filesArray.find(f => f.name === name)
-                    reordered.push(file)
-                })
-
-                filesArray = reordered
-
-            }
-        })
-
-        document.getElementById("uploadForm").addEventListener("submit", function(){
-
-            const dataTransfer = new DataTransfer()
-
-            filesArray.forEach(file=>{
-                dataTransfer.items.add(file)
-            })
-
-            input.files = dataTransfer.files
-
-        })
-
     </script>
 {% endblock %}
 </html>

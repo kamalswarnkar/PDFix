@@ -1,0 +1,13 @@
+{% if error_message or error %}
+<div class="error-alert" id="errorAlert">
+    <span style="font-size: 18px;">⚠️</span>
+    <span id="errorAlertText">{{ error_message|default:error }}</span>
+    <button type="button" class="close-alert" onclick="document.getElementById('errorAlert').style.display='none'">&times;</button>
+</div>
+{% else %}
+<div class="error-alert" id="errorAlert" style="display: none;">
+    <span style="font-size: 18px;">⚠️</span>
+    <span id="errorAlertText"></span>
+    <button type="button" class="close-alert" onclick="document.getElementById('errorAlert').style.display='none'">&times;</button>
+</div>
+{% endif %}

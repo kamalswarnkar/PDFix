@@ -1,21 +1,216 @@
 <script>
+    (function() {
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+        const container = document.getElementById("previewContainer");
+        const errorAlert = document.getElementById("errorAlert");
+        const errorAlertText = document.getElementById("errorAlertText");
+        const form = document.getElementById("uploadForm") || (fileInput ? fileInput.closest("form") : null);
 
-    const dropZone = document.getElementById("dropZone")
-    const fileInput = document.getElementById("fileInput")
+        if (!fileInput) return;
 
-    dropZone.addEventListener("dragover", e=>{
-        e.preventDefault()
-        dropZone.classList.add("dragover")
-    })
+        const isMultiple = fileInput.hasAttribute("multiple");
+        const acceptAttr = fileInput.getAttribute("accept") || "";
+        const allowedExtensions = acceptAttr ? acceptAttr.split(",").map(ext => ext.trim().toLowerCase()) : [];
 
-    dropZone.addEventListener("dragleave", ()=>{
-        dropZone.classList.remove("dragover")
-    })
+        // Global/scoped file list
+        window.filesArray = [];
 
-    dropZone.addEventListener("drop", e=>{
-        e.preventDefault()
-        fileInput.files = e.dataTransfer.files
-        dropZone.classList.remove("dragover")
-    })
+        function showError(msg) {
+            if (errorAlert && errorAlertText) {
+                errorAlertText.textContent = msg;
+                errorAlert.style.display = "flex";
+            } else {
+                alert(msg);
+            }
+        }
 
+        function clearError() {
+            if (errorAlert) {
+                errorAlert.style.display = "none";
+            }
+        }
+
+        function getFileExtension(filename) {
+            return filename.substring(filename.lastIndexOf(".")).toLowerCase();
+        }
+
+        function isValidFileType(file) {
+            if (allowedExtensions.length === 0) return true;
+            const ext = getFileExtension(file.name);
+            return allowedExtensions.includes(ext);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return "0 Bytes";
+            const k = 1024;
+            const sizes = ["Bytes", "KB", "MB"];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+        }
+
+        window.removeFile = function(index) {
+            window.filesArray.splice(index, 1);
+            if (fileInput) fileInput.value = "";
+            triggerFilesChanged();
+        };
+
+        window.triggerFilesChanged = function() {
+            triggerFilesChanged();
+        };
+
+        function triggerFilesChanged() {
+            if (typeof window.onFilesChanged === "function") {
+                window.onFilesChanged(window.filesArray);
+            } else {
+                window.defaultRenderFiles();
+            }
+        }
+
+        window.defaultRenderFiles = function() {
+            if (!container) return;
+            container.innerHTML = "";
+
+            window.filesArray.forEach((file, index) => {
+                const ext = getFileExtension(file.name).replace(".", "");
+                const card = document.createElement("div");
+                card.className = "file-card";
+
+                let cardType = "generic";
+                let iconChar = "📄";
+
+                if (ext === "pdf") {
+                    cardType = "pdf";
+                    iconChar = "📄";
+                } else if (ext === "docx" || ext === "doc") {
+                    cardType = "word";
+                    iconChar = "📘";
+                } else if (["png", "jpg", "jpeg", "webp"].includes(ext)) {
+                    cardType = "image";
+                    iconChar = "🖼️";
+                }
+
+                card.classList.add(cardType);
+                card.dataset.name = file.name;
+
+                let iconHtml = `<div class="file-icon img-preview-container">${iconChar}</div>`;
+                
+                card.innerHTML = `
+                    <button type="button" class="remove-btn" onclick="removeFile(${index})">&times;</button>
+                    ${iconHtml}
+                    <div class="file-name" title="${file.name}">${file.name}</div>
+                    <div class="file-size">${formatBytes(file.size)}</div>
+                `;
+
+                container.appendChild(card);
+
+                // For images, load actual thumbnail asynchronously
+                if (cardType === "image") {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imgContainer = card.querySelector(".img-preview-container");
+                        if (imgContainer) {
+                            imgContainer.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 40px; object-fit: contain; border-radius: 4px;">`;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function handleFileSelection(newFiles) {
+            clearError();
+            let hasInvalid = false;
+            let addedAny = false;
+
+            const filesToProcess = Array.from(newFiles);
+
+            if (!isMultiple) {
+                // Single file mode: overwrite
+                if (filesToProcess.length > 0) {
+                    const file = filesToProcess[0];
+                    if (isValidFileType(file)) {
+                        window.filesArray = [file];
+                        addedAny = true;
+                    } else {
+                        hasInvalid = true;
+                    }
+                }
+            } else {
+                // Multiple files mode: append and deduplicate
+                filesToProcess.forEach(file => {
+                    if (isValidFileType(file)) {
+                        const duplicate = window.filesArray.some(f => 
+                            f.name === file.name && 
+                            f.size === file.size && 
+                            f.lastModified === file.lastModified
+                        );
+                        if (!duplicate) {
+                            window.filesArray.push(file);
+                            addedAny = true;
+                        }
+                    } else {
+                        hasInvalid = true;
+                    }
+                });
+            }
+
+            if (hasInvalid) {
+                const extList = allowedExtensions.join(", ").toUpperCase();
+                showError(`Some files were skipped. Only the following formats are allowed: ${extList || "All files"}`);
+            }
+
+            fileInput.value = ""; // Reset so change triggers again
+            triggerFilesChanged();
+        }
+
+        // Event listeners
+        if (dropZone) {
+            dropZone.addEventListener("dragover", e => {
+                e.preventDefault();
+                dropZone.classList.add("dragover");
+            });
+
+            dropZone.addEventListener("dragleave", () => {
+                dropZone.classList.remove("dragover");
+            });
+
+            dropZone.addEventListener("drop", e => {
+                e.preventDefault();
+                dropZone.classList.remove("dragover");
+                if (e.dataTransfer && e.dataTransfer.files) {
+                    handleFileSelection(e.dataTransfer.files);
+                }
+            });
+
+            // ponytail: guard prevents double-trigger when clicking the <input> inside the drop zone
+            dropZone.addEventListener("click", (e) => {
+                if (e.target === fileInput) return;
+                fileInput.click();
+            });
+        }
+
+        fileInput.addEventListener("change", e => {
+            if (fileInput.files && fileInput.files.length > 0) {
+                handleFileSelection(fileInput.files);
+            }
+        });
+
+        if (form) {
+            form.addEventListener("submit", e => {
+                if (window.filesArray.length === 0) {
+                    e.preventDefault();
+                    showError("Please select at least one file before submitting.");
+                    return;
+                }
+
+                // Transfer files to input files list
+                const dataTransfer = new DataTransfer();
+                window.filesArray.forEach(file => {
+                    dataTransfer.items.add(file);
+                });
+                fileInput.files = dataTransfer.files;
+            });
+        }
+    })();
 </script>

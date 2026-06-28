@@ -1,32 +1,52 @@
 <script>
-    const form = document.querySelector("form")
-    const loader = document.getElementById("loader")
-    const button = document.querySelector("button")
+    (function() {
+        const form = document.querySelector("form");
+        const loader = document.getElementById("loader");
+        const button = document.querySelector("button[type='submit']");
+        const statusText = document.getElementById("statusText");
 
-    if(form){
-        form.addEventListener("submit", function(){
-            loader.style.display = "block"
+        if (!form) return;
 
-            if(button){
-                button.disabled = true
-                button.innerText = "Processing..."
+        // ponytail: listen in capture phase so we run AFTER uploader_script's
+        // submit handler (which calls e.preventDefault() on empty filesArray).
+        // We check defaultPrevented to skip the spinner when validation fails.
+        form.addEventListener("submit", function(e) {
+            if (e.defaultPrevented) return;   // validation blocked submit — do nothing
+
+            if (loader) loader.style.display = "block";
+
+            if (button) {
+                button.disabled = true;
+                button.innerText = "Processing...";
             }
 
-            const checkDownload = setInterval(function(){
-                if(document.cookie.indexOf("fileDownload=true") !== -1){
-                    loader.style.display = "none"
+            let seconds = 0;
+            const elapsed = setInterval(function() {
+                seconds++;
+                const min = Math.floor(seconds / 60);
+                const sec = seconds % 60;
+                const timeStr = min + ":" + (sec < 10 ? "0" : "") + sec;
+                if (button) button.innerText = "Processing... (" + timeStr + ")";
+                if (statusText) statusText.textContent = "Processing your file... (" + timeStr + ")";
+            }, 1000);
 
-                    if(button){
-                        button.disabled = false
-                        button.innerText = "Submit"
+            const checkDownload = setInterval(function() {
+                if (document.cookie.indexOf("fileDownload=true") !== -1) {
+                    if (loader) loader.style.display = "none";
+
+                    clearInterval(elapsed);
+
+                    if (button) {
+                        button.disabled = false;
+                        button.innerText = "Submit";
                     }
+                    if (statusText) statusText.textContent = "Processing your file...";
 
-                    document.cookie = "fileDownload=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+                    document.cookie = "fileDownload=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
-                    clearInterval(checkDownload)
+                    clearInterval(checkDownload);
                 }
-
-            }, 500)
-        })
-    }
+            }, 500);
+        });
+    })();
 </script>

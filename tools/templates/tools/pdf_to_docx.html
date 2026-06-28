@@ -1,30 +1,10 @@
 {% extends "tools/base.html" %}
 {% block meta_description %}
-    Convert Microsoft Word documents (DOCX) into professional PDF files instantly with PDFix free online converter.
+    Convert PDF documents into editable Word (DOCX) files while preserving layout as closely as possible.
 {% endblock %}
 {% block title %}Convert PDF to Word Online Free | PDF to DOCX - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
-    <style>
-        body{
-            font-family: Arial, Helvetica, sans-serif;
-            text-align: center;
-        }
-
-        .drop-zone{
-            width: 400px;
-            margin: auto;
-            margin-top: 40px;
-            padding: 40px;
-            border: 2px dashed #aaa;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-
-        .drop-zone.dragover{
-            background: #eef3ff;
-        }
-    </style>
 {% endblock %}
 {% block content %}
     <h2>PDF to DOCX</h2>
@@ -33,9 +13,21 @@
 
     {% include "tools/components/spinner.html" %}
 
+    {% if not word_engine_available %}
+        <p style="background:#fefce8; border:1px solid #fde047; color:#854d0e; padding:10px 14px; border-radius:6px; max-width:660px; margin:12px auto; font-size:13px;">
+            ⚠️ High-fidelity Word conversion engine is unavailable on this server. Layout, font size, and spacing may differ from the original PDF.
+        </p>
+    {% endif %}
+
+
+    {% include "tools/components/error_message.html" %}
+
+
     <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False accept_types=".pdf" %}
+        <br>
+        <div id="previewContainer" class="preview-container"></div>
         <br>
         <button type="submit" id="submitBtn">Convert</button>
     </form>
@@ -43,17 +35,4 @@
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
-    <script>
-        const form = document.getElementById("uploadForm")
-        const loader = document.getElementById("loader")
-        const button = document.getElementById("submitBtn")
-
-        form.addEventListener("submit", function(){
-
-            loader.style.display="block"
-            button.disabled=true
-            button.innerText="Processing..."
-
-        })
-    </script>
 {% endblock %}

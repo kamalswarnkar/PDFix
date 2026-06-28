@@ -9,21 +9,25 @@ def rotate_pdf(file, angle):
     input_file = f"{uuid.uuid4()}.pdf"
     input_path = os.path.join(settings.MEDIA_ROOT, input_file)
 
-    with open(input_path, "wb") as f:
-        for chunk in file.chunks():
-            f.write(chunk)
-    
-    reader = PdfReader(input_path)
-    writer = PdfWriter()
+    try:
+        with open(input_path, "wb") as f:
+            for chunk in file.chunks():
+                f.write(chunk)
+        
+        reader = PdfReader(input_path)
+        writer = PdfWriter()
 
-    for page in reader.pages:
-        page.rotate(angle)
-        writer.add_page(page)
-    
-    output_name = f"{uuid.uuid4()}_rotated.pdf"
-    output_path = os.path.join(settings.MEDIA_ROOT, output_name)
+        for page in reader.pages:
+            page.rotate(angle)
+            writer.add_page(page)
+        
+        output_name = f"{uuid.uuid4()}_rotated.pdf"
+        output_path = os.path.join(settings.MEDIA_ROOT, output_name)
 
-    with open(output_path, "wb") as f:
-        writer.write(f)
-    
-    return output_name
+        with open(output_path, "wb") as f:
+            writer.write(f)
+        
+        return output_name
+    finally:
+        if os.path.exists(input_path):
+            os.remove(input_path)

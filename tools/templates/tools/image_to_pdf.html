@@ -33,10 +33,6 @@
             margin-top:5px;
         }
 
-        .drop-zone{
-            max-width: 600px;
-            margin: auto;
-        }
 
         #statusMessage{
             font-size:13px;
@@ -52,11 +48,13 @@
 
     {% include "tools/components/spinner.html" %}
 
+    {% include "tools/components/error_message.html" %}
+
     <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        {% include "tools/components/uploader.html" with input_name="images" multiple=True %}
+        {% include "tools/components/uploader.html" with input_name="images" multiple=True accept_types=".png,.jpg,.jpeg" %}
         <br>
-        <div id="previewContainer"></div>
+        <div id="previewContainer" class="preview-container"></div>
         <p id="statusMessage">Upload images, then drag the previews to set their order in the PDF.</p>
         <br>
         <button type="submit">Convert to PDF</button>
@@ -66,65 +64,38 @@
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+
     <script>
-        const input = document.getElementById("fileInput");
         const container = document.getElementById("previewContainer");
         const statusMessage = document.getElementById("statusMessage");
 
-        let filesArray = [];
-
-        input.addEventListener("change", function(){
-            filesArray = Array.from(input.files);
-            renderImages();
-        });
-
-        function renderImages(){
-            container.innerHTML = "";
-
-             if(!filesArray.length){
-                statusMessage.textContent = "Upload images, then drag the previews to set their order in the PDF.";
-                return;
+        window.onFilesChanged = function(files) {
+            if (statusMessage) {
+                statusMessage.textContent = files.length === 0
+                    ? "Upload images, then drag the previews to set their order in the PDF."
+                    : "Drag the image cards to reorder them before converting.";
             }
+            if (typeof window.defaultRenderFiles === "function") {
+                window.defaultRenderFiles();
+            }
+        };
 
-            statusMessage.textContent = "Drag the image cards to reorder them before converting.";
-
-            filesArray.forEach((file, index)=>{
-                const reader = new FileReader();
-                reader.onload = function(e){
-                    const div = document.createElement("div");
-                    div.className = "image-card";
-                    div.dataset.name = file.name;
-
-                    div.innerHTML = `<img src="${e.target.result}" width="100"> <p>${file.name}</p>`;
-
-                    container.appendChild(div);
+        if (container) {
+            new Sortable(container, {
+                animation: 150,
+                onEnd: function() {
+                    const reordered = [];
+                    document.querySelectorAll(".file-card").forEach(card => {
+                        const name = card.dataset.name;
+                        const file = window.filesArray.find(f => f.name === name);
+                        if (file) {
+                            reordered.push(file);
+                        }
+                    });
+                    window.filesArray = reordered;
                 }
-                reader.readAsDataURL(file);
-            })
+            });
         }
-
-        new Sortable(container, {
-            animation: 150,
-            onEnd: function(){
-                const newOrder = [];
-
-                document.querySelectorAll(".image-card").forEach(card=>{
-                    const file = filesArray.find(f => f.name === card.dataset.name);
-                    newOrder.push(file);
-                })
-
-                filesArray = newOrder;
-            }
-        });
-
-        document.getElementById("uploadForm").addEventListener("submit", function(e){
-            const dataTransfer = new DataTransfer();
-
-            filesArray.forEach(file=>{
-                dataTransfer.items.add(file);
-            })
-
-            input.files = dataTransfer.files
-        });
     </script>
 {% endblock %}

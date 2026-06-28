@@ -1,226 +1,182 @@
-# PDFix
+# PDFix 🛠️📄
 
-PDFix is a Django-based web app for common PDF workflows such as merging, splitting, compressing, converting, protecting, unlocking, rotating, extracting, and reordering files. The project is built as a lightweight server-rendered toolkit: users upload files through HTML forms, Django views call focused service modules, processed files are written to `media/`, and the result is streamed back as a download.
+PDFix is a lightweight, responsive, and robust Django-based web application providing a comprehensive suite of offline-first PDF workflows. It is built as a server-rendered toolkit optimized for speed, reliability, and security, allowing users to process sensitive documents entirely within a clean, modern interface.
 
-## What the project includes
+---
 
-PDFix currently ships with these tools:
+## ✨ Features & Tools
 
-- Merge PDF
-- Split PDF
-- Compress PDF
-- Compress PDF to 100 KB target
-- Extract Pages
-- Image to PDF
-- PDF to Image
-- PDF to DOCX
-- DOCX to PDF
-- Rotate PDF
-- Protect PDF
-- Unlock PDF
-- Reorder PDF Pages
+PDFix includes production-ready document processing utilities and feedback channels:
 
-It also includes supporting pages for `About`, `Privacy`, `Terms`, plus `robots.txt` and `sitemap.xml`.
+*   **Merge PDF**: Combine multiple PDF files into one. Supports custom sorting and page reordering via drag-and-drop.
+*   **Split PDF**: Extract every page of a PDF into separate files, compiled into a single ZIP archive.
+*   **Compress PDF**: Reduce file size using optimized Ghostscript parameters.
+*   **Compress to Smallest Size**: Automatically run multiple compression passes (adjusting DPI, JPEG quality, font compression) targeting a highly-compressed file (~100 KB) while ensuring quality and readability are preserved.
+*   **Extract Pages**: Pull out a specific, validated page range (Start to End) to create a new PDF.
+*   **Image to PDF**: Convert a sequence of JPG/PNG/WebP images into a single, uniform A4-sized PDF document. Supports custom drag-and-drop ordering.
+*   **PDF to Image**: Convert pages of a PDF into high-quality PNG images, zipped for download.
+*   **PDF to DOCX**: Convert PDFs to editable Word documents (leveraging Word COM on Windows or LibreOffice/pdf2docx as cross-platform fallbacks).
+*   **DOCX to PDF**: Convert editable Word documents into professional PDFs with high layout fidelity.
+*   **Rotate PDF**: Rotate pages clockwise or counterclockwise with a real-time rotation preview of the first page.
+*   **Protect PDF**: Add high-strength password encryption to secure your files.
+*   **Unlock PDF**: Remove password restrictions from protected documents.
+*   **Reorder PDF Pages**: Drag-and-drop visual page preview grid to completely rearrange a document's page structure.
+*   **User Feedback & Suggestions**: Floating quick-action widgets (🐛 Bug Report / 💡 Feature Suggestion) allowing users to submit forms directly, persisting data in the SQLite database and triggering instant email notifications to the admin.
 
-## Tech stack
+---
 
-- Backend: Django 6
-- Language: Python
-- PDF processing: `pypdf`
-- PDF compression: Ghostscript via `subprocess`
-- PDF to image: `pdf2image`
-- PDF to DOCX: `pdf2docx`
-- Image to PDF: Pillow
-- DOCX to PDF: LibreOffice / `soffice`
-- Frontend: Django templates, vanilla JavaScript, CSS
-- Client-side page preview and sorting: PDF.js and SortableJS via CDN
-- Database: SQLite (default Django setup, but the app itself is effectively stateless)
+## 🎨 User Experience & Mobile Compatibility
 
-## Architecture overview
+*   **Fully Responsive Mobile Layout**: Restyled with standard viewport scaling and media-query break points to ensure optimal readability, navigation, and usability across mobiles, tablets, laptops, and desktop computers.
+*   **Dynamic Drag-and-Drop Uploader**: Built on top of HTML5 drag-and-drop with custom client-side validation, duplicate checks, and card previews.
+*   **Interactive File Previews**: View thumbnails of selected images or doc cards before processing.
+*   **Live Rotation Previews**: Real-time rendering of PDF rotation using PDF.js prior to submission.
+*   **Elapsed Processing Timers**: Accurate time feedback ("Processing... (0:15)") for long-running conversions to eliminate user frustration.
+*   **Secure Password Toggle**: Smooth eye toggle visibility helper for secure, hassle-free credential typing.
+*   **Comprehensive Error Handling**: Clean, non-intrusive alert component to gracefully catch invalid page numbers, decryption errors, and conversion failures without triggering unhandled server 500 crashes.
 
-The project uses a simple Django app structure:
+---
 
-```text
-PDFix/
-|-- config/                  # Django project config
-|   |-- settings.py
-|   |-- urls.py
-|   |-- asgi.py
-|   `-- wsgi.py
-|-- tools/                   # Main app
-|   |-- services/            # One file-processing module per tool
-|   |-- templates/tools/     # Pages, shared components, SEO/static pages
-|   |-- utils/cleanup.py     # Deletes old generated files from media/
-|   |-- views.py             # Request handling and download responses
-|   `-- urls.py              # Tool routes
-|-- static/                  # Logo and favicon
-|-- media/                   # Temporary uploaded/generated files
-|-- db.sqlite3
-`-- manage.py
-```
+## 💻 Tech Stack
 
-### Request workflow
+*   **Backend**: Django 6.x (Python)
+*   **Database**: SQLite (built-in, tracking feedback and suggestions)
+*   **PDF Libraries**: `pypdf`, `pikepdf`, `pdf2image`, `pdf2docx`, `Pillow`
+*   **System Binaries**: Ghostscript, LibreOffice (soffice), Poppler
+*   **Frontend**: HTML5, Vanilla JavaScript, CSS Grid/Flexbox
+*   **Client Libraries**: PDF.js, SortableJS (via CDN)
+*   **Asset Storage**: Auto-cleaned `media/` directory (UUID-based paths)
 
-Most tools follow the same lifecycle:
+---
 
-1. A user opens a page rendered from `tools/templates/tools/*.html`.
-2. The form submits uploaded file(s) to a dedicated view in `tools/views.py`.
-3. The view calls `cleanup_old_files()` before processing.
-4. The view hands the uploaded file(s) to a matching service module in `tools/services/`.
-5. The service writes the output into `MEDIA_ROOT` using a UUID-based filename.
-6. The view returns a `FileResponse` so the browser immediately downloads the processed result.
-7. A cookie named `fileDownload=true` is set so the frontend spinner can stop after the file download begins.
+## 🛠️ Installation & Setup
 
-### Frontend workflow
+### Local Run
 
-- `tools/templates/tools/base.html` provides the shared layout, metadata, and footer links.
-- Shared fragments in `tools/templates/tools/components/` handle the uploader UI, FAQ block, and loading spinner.
-- Most tool pages are server-rendered forms with very light JavaScript.
-- `reorder_pdf.html` is the most interactive page:
-  - It renders PDF previews in the browser using PDF.js.
-  - Users drag pages into a new order with SortableJS.
-  - The final page order is submitted as a hidden input to the backend service.
-
-### Service-layer design
-
-Each tool is isolated in its own module under `tools/services/`. That keeps the view layer thin and makes the project easy to extend. Examples:
-
-- `merge_pdf.py` combines uploaded PDFs with `PdfWriter`
-- `split_pdf.py` creates one PDF per page and returns a ZIP archive
-- `compress_pdf.py` and `compress_to_size.py` shell out to Ghostscript
-- `pdf_to_image.py` converts PDFs into PNGs and packages them as ZIP
-- `pdf_to_docx.py` uses `pdf2docx`
-- `docx_to_pdf.py` shells out to `soffice --headless`
-- `protect_pdf.py` and `unlock_pdf.py` handle password operations with `pypdf`
-- `reorder_pdf.py` validates the submitted page sequence before rebuilding the file
-
-## Setup
-
-### 1. Clone the repository
+#### 1. Clone & Setup Environment
 
 ```bash
-git clone <your-repo-url>
+git clone <repository-url>
 cd PDFix
-```
 
-### 2. Create and activate a virtual environment
-
-Windows:
-
-```bash
+# Create a virtual environment
 python -m venv penv
-penv\Scripts\activate
-```
+source penv/bin/activate  # On Windows: penv\Scripts\activate
 
-macOS / Linux:
-
-```bash
-python -m venv penv
-source penv/bin/activate
-```
-
-### 3. Install Python packages
-
-Install dependencies from the committed `requirements.txt`:
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 4. Install system dependencies
+#### 2. Install System Dependencies
 
-Some tools rely on executables outside Python:
+Some advanced tools require system-level executables:
 
-- Ghostscript
-  - Required for `compress-pdf` and `compress-pdf-100kb`
-  - The code resolves `gs`/`gswin64c` from `PATH` (with a Windows fallback path check).
-- LibreOffice
-  - Required for `docx-to-pdf`
-  - The code expects `soffice` to be available in `PATH`
-- Poppler
-  - Required by `pdf2image` for `pdf-to-image`
-  - Make sure Poppler binaries are installed and available in `PATH`
+*   **Ghostscript** (Required for PDF Compression):
+    *   *Windows*: Install the latest release (e.g., v10.06.0) and add the `bin` directory to your path.
+    *   *Linux/macOS*: Install via package manager (`apt-get install ghostscript` or `brew install ghostscript`).
+*   **LibreOffice** (Required for DOCX to PDF / PDF to DOCX):
+    *   Ensure the `soffice` executable is added to your environment `PATH`.
+*   **Poppler** (Required for PDF to Image):
+    *   Ensure Poppler binaries are installed and accessible on `PATH`.
 
-### 5. Run migrations
+#### 3. Database & App Initialization
 
-```bash
-python manage.py migrate
+1. Create a `.env` file in the project root containing your configurations (see `.env.example` as a template).
+2. Run database migrations:
+   ```bash
+   python manage.py migrate
+   ```
+3. Run the development server:
+   ```bash
+   python manage.py runserver
+   ```
+
+Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your web browser.
+
+---
+
+### Docker Deployment
+
+PDFix can be completely dockerized for a portable, unified setup. The provided `Dockerfile` compiles all required system dependencies (Ghostscript, LibreOffice, Poppler, and fonts) and packages the application.
+
+#### 1. Set Up Environment Variables
+Copy `.env.example` to `.env` in the root folder and configure:
+```env
+DJANGO_SECRET_KEY=your-production-secret-key
+ALLOWED_HOSTS=localhost,127.0.0.1
+DEBUG=false
+
+# Optional Gmail SMTP config for email alerts:
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-gmail-app-password
+FEEDBACK_EMAIL=kamalswarnkar0111@gmail.com
 ```
 
-### 6. Start the development server
-
+#### 2. Run with Docker Compose
+Run the following command to build the image and launch the application container:
 ```bash
-python manage.py runserver
+docker-compose up --build -d
+```
+This command:
+*   Builds the image with all Python package dependencies and system binaries cached.
+*   Runs Django database migrations inside the container automatically.
+*   Mounts a persistent Docker volume `pdfix_media` to preserve uploads/downloads inside `/app/media`.
+*   Serves the application on port `8000`.
+
+To view container logs or status:
+```bash
+docker-compose logs -f
 ```
 
-Open `http://127.0.0.1:8000/`.
+To stop the containers:
+```bash
+docker-compose down
+```
 
-## URL map
+---
 
-Main routes exposed by `tools/urls.py`:
+## 📂 Project Architecture
 
-- `/`
-- `/merge-pdf/`
-- `/split-pdf/`
-- `/compress-pdf/`
-- `/compress-pdf-100kb/`
-- `/extract-pages/`
-- `/image-to-pdf/`
-- `/pdf-to-image/`
-- `/pdf-to-docx/`
-- `/docx-to-pdf/`
-- `/rotate-pdf/`
-- `/protect-pdf/`
-- `/unlock-pdf/`
-- `/reorder-pdf/`
-- `/about/`
-- `/privacy/`
-- `/terms/`
-- `/robots.txt`
-- `/sitemap.xml`
+```text
+PDFix/
+├── config/                  # Django project settings
+│   ├── settings.py          # Environment configuration
+│   └── urls.py              # App routing
+├── tools/                   # Core application
+│   ├── models.py            # Feedback & Suggestion database models
+│   ├── services/            # Isolated file processing services
+│   │   ├── compress_pdf.py
+│   │   ├── docx_to_pdf.py
+│   │   └── ...
+│   ├── templates/tools/     # Responsive HTML templates
+│   │   ├── components/      # Shared uploader, FAQ, spinner, and alerts
+│   │   └── ...
+│   ├── utils/
+│   │   └── cleanup.py       # Temporary file housekeeping
+│   ├── views.py             # Route request handlers
+│   └── urls.py              # App URLs
+├── media/                   # Workspace for active file conversions
+├── static/                  # Brand assets (logo, favicon)
+├── Dockerfile               # Production multi-step docker builder
+├── docker-compose.yml       # Production-ready docker compose orchestration
+├── .env.example             # Config file template
+└── manage.py
+```
 
-## File handling and cleanup
+---
 
-- Generated files are stored in `media/`
-- Filenames are UUID-based to avoid collisions
-- `cleanup_old_files()` removes files older than 30 minutes
-- Cleanup runs at the start of each tool request, not as a background job
+## 🧼 File Housekeeping
 
-This makes the app simple to run locally, but production deployments may benefit from scheduled cleanup, isolated temp directories, and stricter validation around uploads.
+Uploaded and generated files are automatically isolated in `media/` using unique UUID prefixes to prevent filename collisions. To keep the server storage clean, a lightweight cleanup module runs automatically on every tool request:
 
-## Current implementation notes
+*   Deletes temporary and output files older than 30 minutes.
+*   Runs safely in the request cycle, requiring no external cron/scheduler configuration.
 
-- The app does not currently define domain models beyond Django defaults, so the database is not central to the product workflow.
-- `tools/tests.py` is still empty, so automated test coverage has not been added yet.
-- `DEBUG = False`, `ALLOWED_HOSTS = ["*"]`, and a hardcoded secret key are present in `config/settings.py`; the secret key and host policy should be hardened before production deployment.
-- Compression and DOCX conversion depend on local machine tooling, so portability is limited until those paths/settings are externalized.
-- Most tools trust uploaded input and perform only minimal validation. That is acceptable for a local/demo project, but production use should add stronger validation, error handling, logging, and size limits.
+---
 
-## How to add a new tool
+## 🔒 Security & Privacy
 
-To extend PDFix with another PDF utility:
-
-1. Add a new processing function in `tools/services/`
-2. Create a view in `tools/views.py`
-3. Register a route in `tools/urls.py`
-4. Add a new template in `tools/templates/tools/`
-5. Link it from `home.html`
-
-The current project structure is clean enough that new tools can be added without changing the overall architecture.
-
-## Summary
-
-PDFix is a straightforward, modular Django PDF toolkit with:
-
-- Server-rendered pages
-- Thin views
-- Per-tool service modules
-- Temporary file output in `media/`
-- Direct file-download responses
-- Small reusable frontend components
-
-It is a good base for a personal project, portfolio app, or small utility product, and it has clear next steps if you want to harden it for production.
-
-
-
+*   **Stateless Operations**: No uploaded documents are ever indexed, cataloged, or saved in database models.
+*   **Automated Purging**: Media files are deleted automatically after 30 minutes, or instantly where execution blocks allow.
+*   **Local Processing Fallbacks**: Features like Windows COM automation bypass external network calls entirely.
 

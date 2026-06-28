@@ -1,23 +1,34 @@
 {% extends "tools/base.html" %}
 {% block meta_description %}
-    Compress PDF files to approximately 100KB for easy form submissions and uploads. Free online PDF compression tool by PDFix.
+    Compress PDF files to the smallest possible size while preserving readability. Targets around 100KB for easy form submissions. Free online PDF compression tool by PDFix.
 {% endblock %}
-{% block title %}Compress PDF to 100KB Online Free - PDFix{% endblock %}
+{% block title %}Compress PDF to Smallest Size Online Free - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
-    <h2>Compress PDF to 100KB</h2>
+    <h2>Compress PDF to Smallest Size</h2>
 
-    {% include "tools/components/tool_desc.html" with text="Compress your PDF file to approximately 100KB for easy submission on websites and forms that require strict file size limits." %}
+    {% include "tools/components/tool_desc.html" with text="Compress your PDF to the smallest possible size while keeping quality and readability intact — ideal for websites and forms with strict file size limits." %}
+
+    <p style="font-size:13px; color:#6b7280; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; padding:10px 14px; margin:12px 0;">
+        ℹ️ <strong>Note:</strong> This tool compresses your PDF as much as technically possible while preserving readability. It targets around 100KB, but the actual output size depends on the content of your file — highly complex or image-heavy PDFs may result in a larger file.
+    </p>
 
     {% include "tools/components/spinner.html" %}
 
-    <form method="post" enctype="multipart/form-data">
+    {% include "tools/components/error_message.html" %}
+
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False accept_types=".pdf" %}
         <br>
-        <button type="submit">Compress to 100KB</button>
+        <div id="previewContainer" class="preview-container"></div>
+        <br>
+        <p style="font-size:13px; color:#6b7280; margin:8px 0;">
+            ⏱ This applies multiple compression passes and may take <strong>1–3 minutes</strong> for large files. The elapsed time will be shown while processing.
+        </p>
+        <button type="submit">Compress PDF</button>
     </form>
 
     {% include "tools/components/faq.html" %}

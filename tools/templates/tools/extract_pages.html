@@ -13,15 +13,22 @@
 
     {% include "tools/components/spinner.html" %}
 
-    <form method="post" enctype="multipart/form-data">
+    {% include "tools/components/error_message.html" %}
+
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        {% include "tools/components/uploader.html" with input_name="file" multiple=False %}
+        {% include "tools/components/uploader.html" with input_name="file" multiple=False accept_types=".pdf" %}
         <br>
+        <div id="previewContainer" class="preview-container"></div>
+        <br>
+        <div id="pageCountBanner" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:8px 14px;max-width:480px;margin:0 auto 12px auto;font-size:13px;color:#166534;text-align:center;">
+            📄 Total pages in this PDF: <strong id="totalPagesNum">—</strong>
+        </div>
         <label>Start Page</label>
-        <input type="number" name="start" required>
+        <input type="number" name="start" id="startPage" min="1" required>
         <br><br>
         <label>End Page</label>
-        <input type="number" name="end" required>
+        <input type="number" name="end" id="endPage" min="1" required>
         <br><br>
         <button type="submit">Extract Pages</button>
     </form>
@@ -29,4 +36,39 @@
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+        const pageCountBanner = document.getElementById("pageCountBanner");
+        const totalPagesNum = document.getElementById("totalPagesNum");
+        const startInput = document.getElementById("startPage");
+        const endInput = document.getElementById("endPage");
+
+        window.onFilesChanged = function(files) {
+            window.defaultRenderFiles();
+            if (files.length === 0) {
+                pageCountBanner.style.display = "none";
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const pdf = await pdfjsLib.getDocument(new Uint8Array(e.target.result)).promise;
+                    const n = pdf.numPages;
+                    totalPagesNum.textContent = n;
+                    pageCountBanner.style.display = "block";
+                    // auto-fill sensible defaults
+                    if (!startInput.value) startInput.value = 1;
+                    if (!endInput.value) endInput.value = n;
+                    endInput.max = n;
+                    startInput.max = n;
+                } catch (_) {
+                    pageCountBanner.style.display = "none";
+                }
+            };
+            reader.readAsArrayBuffer(files[0]);
+        };
+    </script>
 {% endblock %}

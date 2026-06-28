@@ -9,3 +9,7 @@ staticfiles/
 .env.*
 .vscode/
 *.ctl
+.agents/
+deployment_guide.md
+"Major IssuesChallenges with PDFix.txt"
+db/

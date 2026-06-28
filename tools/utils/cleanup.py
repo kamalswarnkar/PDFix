@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 from django.conf import settings
 
 
@@ -10,19 +11,28 @@ def cleanup_old_files():
     now = time.time()
 
     for filename in os.listdir(folder):
+        # Skip gitignore if it exists in media for any reason
+        if filename == ".gitignore":
+            continue
+
         file_path = os.path.join(folder, filename)
 
-        if os.path.isfile(file_path):
-            try:
-                file_age = now - os.path.getmtime(file_path)
-            except OSError:
-                # File may be deleted or moved while iterating.
-                continue
+        try:
+            mtime = os.path.getmtime(file_path)
+        except OSError:
+            # File or folder may have been removed concurrently
+            continue
 
-            # 30 mins = 1800 sec
-            if file_age > 1800:
-                try:
+        file_age = now - mtime
+
+        # 30 mins = 1800 sec
+        if file_age > 1800:
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
                     os.remove(file_path)
-                except (PermissionError, OSError):
-                    # Ignore files currently in use or concurrently modified.
-                    pass
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path, ignore_errors=True)
+            except (PermissionError, OSError):
+                # Ignore files/folders currently in use
+                pass
+

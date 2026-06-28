@@ -3,12 +3,26 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.sqlite3
+*.egg-info/
+node_modules/
+
+# Runtime/generated dirs — handled by volumes or collectstatic in container
 db.sqlite3
 media/
 staticfiles/
+
+# VCS & IDE
 .git/
 .gitignore
 .vscode/
+.agents/
+
+# Secrets — never bake into image
 .env
 .env.*
+# .env.example is intentionally kept (it has no secrets)
+
+# Docs / dev-only files
+"Major IssuesChallenges with PDFix.txt"
+deployment_guide.md
+db/

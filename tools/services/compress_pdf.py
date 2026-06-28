@@ -58,7 +58,7 @@ def compress_pdf(file):
         gs_path,
         "-sDEVICE=pdfwrite",
         "-dCompatibilityLevel=1.4",
-        "-dPDFSETTINGS=/screen",
+        "-dPDFSETTINGS=/ebook",
         "-dNOPAUSE",
         "-dQUIET",
         "-dBATCH",

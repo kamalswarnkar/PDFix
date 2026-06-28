@@ -2,8 +2,20 @@ services:
   web:
     build: .
     container_name: pdfix_app
-    command: sh -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DEBUG=${DEBUG:-false}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
+      - FEEDBACK_EMAIL=${FEEDBACK_EMAIL:-kamalswarnkar0111@gmail.com}
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - pdfix_media:/app/media
+    restart: unless-stopped
+
+volumes:
+  pdfix_media:
