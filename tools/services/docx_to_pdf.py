@@ -60,16 +60,7 @@ def docx_to_pdf(file):
             if _convert_with_word_com(input_path, output_path):
                 return output_name
 
-        # ── Tier 2: docx2pdf library (Windows fallback, wraps COM efficiently) ─
-        try:
-            from docx2pdf import convert
-            convert(input_path, output_path)
-            if os.path.exists(output_path):
-                return output_name
-        except Exception:
-            pass
-
-        # ── Tier 3: LibreOffice headless (cross-platform, non-Windows) ────────
+        # ── Tier 2: LibreOffice headless (cross-platform) ──────────────────
         profile_dir = os.path.join(settings.MEDIA_ROOT, "lo_shared_profile")
         os.makedirs(profile_dir, exist_ok=True)
 
