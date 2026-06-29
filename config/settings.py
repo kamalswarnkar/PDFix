@@ -33,13 +33,20 @@ ALLOWED_HOSTS = [host.strip() for host in raw_allowed_hosts.split(",") if host.s
 raw_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in raw_csrf_origins.split(",") if origin.strip()]
 
+# Railway: auto-inject public domain into CSRF trusted origins
 railway_public_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
 if railway_public_domain:
     railway_origin = f"https://{railway_public_domain}"
     if railway_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(railway_origin)
 
-# Railway/reverse-proxy HTTPS support
+# Render: auto-inject external URL into CSRF trusted origins
+# RENDER_EXTERNAL_URL is automatically set by Render on every deployment.
+render_external_url = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
+if render_external_url and render_external_url not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(render_external_url)
+
+# Reverse-proxy HTTPS support (Railway, Render, and similar platforms)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
