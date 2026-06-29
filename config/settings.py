@@ -33,18 +33,25 @@ ALLOWED_HOSTS = [host.strip() for host in raw_allowed_hosts.split(",") if host.s
 raw_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in raw_csrf_origins.split(",") if origin.strip()]
 
-# Railway: auto-inject public domain into CSRF trusted origins
-railway_public_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+# Railway: auto-inject hostname into ALLOWED_HOSTS + CSRF_TRUSTED_ORIGINS
+railway_public_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
 if railway_public_domain:
+    if railway_public_domain not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(railway_public_domain)
     railway_origin = f"https://{railway_public_domain}"
     if railway_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(railway_origin)
 
-# Render: auto-inject external URL into CSRF trusted origins
-# RENDER_EXTERNAL_URL is automatically set by Render on every deployment.
+# Render: auto-inject hostname into ALLOWED_HOSTS + CSRF_TRUSTED_ORIGINS
+# RENDER_EXTERNAL_URL (e.g. https://pdfix.onrender.com) is set automatically by Render.
 render_external_url = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
-if render_external_url and render_external_url not in CSRF_TRUSTED_ORIGINS:
-    CSRF_TRUSTED_ORIGINS.append(render_external_url)
+if render_external_url:
+    # Strip scheme to get bare hostname for ALLOWED_HOSTS
+    render_hostname = render_external_url.replace("https://", "").replace("http://", "")
+    if render_hostname and render_hostname not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(render_hostname)
+    if render_external_url not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_external_url)
 
 # Reverse-proxy HTTPS support (Railway, Render, and similar platforms)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
