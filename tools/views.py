@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, FileResponse, JsonResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.mail import send_mail
 from django.conf import settings
 from .services.merge_pdf import merge_pdfs
@@ -26,6 +27,7 @@ def build_download_name(original_name, suffix, extension):
     base_name = os.path.splitext(os.path.basename(original_name))[0]
     return f"{base_name}{suffix}{extension}"
 
+@ensure_csrf_cookie
 def home(request):
     return render(request, "tools/home.html")
 
@@ -313,18 +315,6 @@ def unlock_pdf_view(request):
     
     return render(request, "tools/unlock_pdf.html")
 
-def reorder_pdf_view(request):
-    cleanup_old_files()
-
-    if request.method == "POST":
-        file = request.FILES.get("file")
-        order = request.POST.get("order")
-
-        response.set_cookie("fileDownload", "true")
-
-        return response
-    
-    return render(request, "tools/unlock_pdf.html")
 
 def reorder_pdf_view(request):
     cleanup_old_files()
@@ -348,6 +338,7 @@ def reorder_pdf_view(request):
 
         response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=download_name)
         response.set_cookie("fileDownload", "true")
+        return response
     return render(request, "tools/reorder_pdf.html")
 
 def privacy_view(request):

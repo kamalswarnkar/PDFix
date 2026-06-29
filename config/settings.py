@@ -156,6 +156,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Allow uploads up to 50 MB (default Django limit is 2.5 MB which causes 404 on large files)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800   # 50 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800   # 50 MB
+
 # Email — Configure SMTP via environment variables in production.
 # Locally, falls back to the console backend if EMAIL_HOST_USER is absent.
 _email_user = os.environ.get("EMAIL_HOST_USER", "")

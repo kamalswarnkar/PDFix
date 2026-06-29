@@ -265,14 +265,15 @@ def pdf_to_docx(file):
             if _convert_with_word_powershell(input_path, output_path):
                 return output_name
 
-        # Tier 2: LibreOffice fallback, usually faster on complex PDFs.
-        if _convert_with_libreoffice(input_path, settings.MEDIA_ROOT, output_path, uid):
-            return output_name
-
-        # Tier 3: pdf2docx for smaller files where an editable structure is feasible.
+        # Tier 2: pdf2docx — best text/layout fidelity for standard PDFs on Linux.
+        # Runs first on non-Windows where Word COM is unavailable.
         if _should_try_pdf2docx(input_path):
             if _convert_with_pdf2docx(input_path, output_path):
                 return output_name
+
+        # Tier 3: LibreOffice — handles complex/large PDFs that pdf2docx can't parse.
+        if _convert_with_libreoffice(input_path, settings.MEDIA_ROOT, output_path, uid):
+            return output_name
 
         raise RuntimeError("PDF to DOCX conversion failed across all available engines.")
     finally:
