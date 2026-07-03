@@ -27,7 +27,7 @@ DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 
 # Hosts and CSRF origins
-raw_allowed_hosts = os.environ.get("ALLOWED_HOSTS", "*")
+raw_allowed_hosts = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [host.strip() for host in raw_allowed_hosts.split(",") if host.strip()]
 
 raw_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
@@ -103,13 +103,32 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+#
+# Production: set DATABASE_URL (e.g. postgres://user:pass@host/db) — Railway,
+# Render, and Fly all inject this automatically.  Falls back to SQLite locally.
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('DATABASE_PATH', BASE_DIR / 'db.sqlite3'),
+_database_url = os.environ.get("DATABASE_URL", "")
+if _database_url:
+    import urllib.parse as _up
+    _u = _up.urlparse(_database_url)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _u.path.lstrip('/'),
+            'USER': _u.username,
+            'PASSWORD': _u.password,
+            'HOST': _u.hostname,
+            'PORT': _u.port or 5432,
+            'CONN_MAX_AGE': 60,
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -151,7 +170,11 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# ponytail: STATICFILES_STORAGE is deprecated in Django 4.2+; use STORAGES dict.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -174,6 +197,7 @@ if _email_user:
     DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", _email_user)
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    DEFAULT_FROM_EMAIL = "noreply@pdfix.app"
 
 FEEDBACK_EMAIL = os.environ.get("FEEDBACK_EMAIL", "kamalswarnkar0111@gmail.com")
 

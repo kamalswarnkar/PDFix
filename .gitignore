@@ -6,7 +6,9 @@ db.sqlite3
 media/
 staticfiles/
 .env
-.env.*
+.env.local
+.env.production
+.env.staging
 .vscode/
 *.ctl
 .agents/

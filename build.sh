@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-set -e
+# Build script for Render (and similar PaaS that run a build command).
+# This runs at build time — do NOT start the server here.
+# ponytail: gunicorn is the runtime start command (Procfile / Dockerfile CMD), not build.
+set -euo pipefail
 
-pip install -r requirements.txt
-
-apt-get update
-apt-get install -y --no-install-recommends poppler-utils ghostscript libreoffice
+pip install --no-cache-dir -r requirements.txt
 
 python manage.py collectstatic --noinput
 python manage.py migrate --noinput
-
-# ponytail: WSGI module is config.wsgi (Django project name), not PDFix.wsgi
-gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120

@@ -61,7 +61,8 @@ def docx_to_pdf(file):
                 return output_name
 
         # ── Tier 2: LibreOffice headless (cross-platform) ──────────────────
-        profile_dir = os.path.join(settings.MEDIA_ROOT, "lo_shared_profile")
+        import tempfile
+        profile_dir = os.path.join(tempfile.gettempdir(), "lo_profile")
         os.makedirs(profile_dir, exist_ok=True)
 
         try:
