@@ -184,11 +184,12 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800   # 50 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800   # 50 MB
 
 # Email — Configure SMTP via environment variables in production.
+# Brevo (smtp-relay.brevo.com) is recommended over Gmail for speed and reliability.
 # Locally, falls back to the console backend if EMAIL_HOST_USER is absent.
 _email_user = os.environ.get("EMAIL_HOST_USER", "")
 if _email_user:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+    EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp-relay.brevo.com")
     EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
     EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
     EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "False").lower() == "true"
