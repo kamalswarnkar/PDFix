@@ -1,59 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
+{% autoescape off %}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>http://127.0.0.1:8000/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/merge-pdf/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/merge-pdf/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/split-pdf/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/split-pdf/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/compress-pdf/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/compress-pdf/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/compress-pdf-100kb/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/compress-pdf-100kb/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/extract-pages/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/extract-pages/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/image-to-pdf/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/image-to-pdf/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/pdf-to-image/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/pdf-to-image/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/rotate-pdf/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/rotate-pdf/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/protect-pdf/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/protect-pdf/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/unlock-pdf/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/unlock-pdf/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/reorder-pdf/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/reorder-pdf/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/docx-to-pdf/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/docx-to-pdf/</loc>
     </url>
 
     <url>
-        <loc>http://127.0.0.1:8000/pdf-to-docx/</loc>
+        <loc>{{ request.scheme }}://{{ request.get_host }}/pdf-to-docx/</loc>
     </url>
 </urlset>
+{% endautoescape %}
