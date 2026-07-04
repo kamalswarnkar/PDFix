@@ -21,8 +21,17 @@ from .utils.cleanup import cleanup_old_files
 from .models import Feedback, Suggestion
 import os
 import logging
+import threading
 
 logger = logging.getLogger(__name__)
+
+
+def _send_email_bg(subject, message, from_email, recipient):
+    """Fire-and-forget email in a daemon thread — never blocks the HTTP response."""
+    try:
+        send_mail(subject, message, from_email, [recipient], fail_silently=True)
+    except Exception:
+        pass
 
 # Create your views here.
 
@@ -357,14 +366,16 @@ def about_view(request):
 @require_POST
 def submit_feedback(request):
     feature = request.POST.get("feature", "").strip()
-    issue = request.POST.get("issue", "").strip()
+    issue   = request.POST.get("issue", "").strip()
     if not feature or not issue:
         return JsonResponse({"ok": False, "error": "Please fill in all fields."}, status=400)
+    if len(issue) > 3000:
+        return JsonResponse({"ok": False, "error": "Issue description is too long (max 3000 characters)."}, status=400)
 
     try:
         Feedback.objects.create(feature=feature, issue=issue)
     except Exception:
-        logger.exception("submit_feedback: DB save failed — continuing to send email")
+        logger.exception("submit_feedback: DB save failed")
 
     body = (
         f"Bug Report \u2014 PDFix\n"
@@ -372,32 +383,28 @@ def submit_feedback(request):
         f"Feature : {feature}\n"
         f"Issue   : {issue}\n"
     )
-    try:
-        send_mail(
-            subject=f"[PDFix Bug] {feature}",
-            message=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.FEEDBACK_EMAIL],
-            fail_silently=True,
-        )
-    except Exception:
-        pass
+    threading.Thread(
+        target=_send_email_bg,
+        args=(f"[PDFix Bug] {feature}", body, settings.DEFAULT_FROM_EMAIL, settings.FEEDBACK_EMAIL),
+        daemon=True,
+    ).start()
 
     return JsonResponse({"ok": True})
-
 
 
 @require_POST
 def submit_suggestion(request):
     description = request.POST.get("description", "").strip()
-    why_needed = request.POST.get("why_needed", "").strip()
+    why_needed  = request.POST.get("why_needed", "").strip()
     if not description or not why_needed:
         return JsonResponse({"ok": False, "error": "Please fill in all fields."}, status=400)
+    if len(description) > 3000 or len(why_needed) > 3000:
+        return JsonResponse({"ok": False, "error": "Text is too long (max 3000 characters per field)."}, status=400)
 
     try:
         Suggestion.objects.create(description=description, why_needed=why_needed)
     except Exception:
-        logger.exception("submit_suggestion: DB save failed — continuing to send email")
+        logger.exception("submit_suggestion: DB save failed")
 
     body = (
         f"Suggestion \u2014 PDFix\n"
@@ -405,15 +412,10 @@ def submit_suggestion(request):
         f"Description : {description}\n"
         f"Why needed  : {why_needed}\n"
     )
-    try:
-        send_mail(
-            subject="[PDFix Suggestion]",
-            message=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.FEEDBACK_EMAIL],
-            fail_silently=True,
-        )
-    except Exception:
-        pass
+    threading.Thread(
+        target=_send_email_bg,
+        args=("[PDFix Suggestion]", body, settings.DEFAULT_FROM_EMAIL, settings.FEEDBACK_EMAIL),
+        daemon=True,
+    ).start()
 
     return JsonResponse({"ok": True})

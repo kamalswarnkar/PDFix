@@ -195,6 +195,7 @@ if _email_user:
     EMAIL_HOST_USER = _email_user
     EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
     DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", _email_user)
+    EMAIL_TIMEOUT = 10  # abort SMTP connection after 10 s — never block a gunicorn worker indefinitely
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     DEFAULT_FROM_EMAIL = "noreply@pdfix.app"
