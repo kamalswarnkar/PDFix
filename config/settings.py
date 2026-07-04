@@ -203,3 +203,7 @@ else:
 
 FEEDBACK_EMAIL = os.environ.get("FEEDBACK_EMAIL", "kamalswarnkar0111@gmail.com")
 
+# Brevo API key — used for sending transactional email via HTTP (avoids SMTP port blocks).
+# Get from: Brevo Dashboard → Settings → API Keys → Create API Key
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+

@@ -20,24 +20,39 @@ from .services.reorder_pdf import reorder_pdf
 from .utils.cleanup import cleanup_old_files
 from .models import Feedback, Suggestion
 import os
+import json
 import logging
 import threading
+import urllib.request
 
 logger = logging.getLogger(__name__)
 
 
 def _send_email_bg(subject, message, from_email, recipient):
-    """Fire-and-forget email in a daemon thread — never blocks the HTTP response."""
+    """Send via Brevo HTTP API — avoids SMTP ports blocked by Render/Railway."""
     from django.conf import settings as _s
-    logger.info(
-        "PDFix email: backend=%s host=%s to=%s subject=%r",
-        _s.EMAIL_BACKEND, getattr(_s, "EMAIL_HOST", "N/A"), recipient, subject,
+    api_key = getattr(_s, "BREVO_API_KEY", "")
+    if not api_key:
+        logger.warning("PDFix email: BREVO_API_KEY not set, skipping email")
+        return
+    payload = json.dumps({
+        "sender": {"name": "PDFix", "email": from_email},
+        "to": [{"email": recipient}],
+        "subject": subject,
+        "textContent": message,
+    }).encode()
+    req = urllib.request.Request(
+        "https://api.brevo.com/v3/smtp/email",
+        data=payload,
+        headers={"Content-Type": "application/json", "api-key": api_key},
+        method="POST",
     )
     try:
-        send_mail(subject, message, from_email, [recipient], fail_silently=False)
-        logger.info("PDFix email: sent OK to %s", recipient)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            logger.info("PDFix email: sent OK (HTTP %s) to %s", resp.status, recipient)
     except Exception:
-        logger.exception("PDFix email: send FAILED")
+        logger.exception("PDFix email: Brevo API call FAILED")
+
 
 # Create your views here.
 
