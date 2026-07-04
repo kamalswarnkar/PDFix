@@ -364,11 +364,10 @@ def submit_feedback(request):
     try:
         Feedback.objects.create(feature=feature, issue=issue)
     except Exception:
-        logger.exception("submit_feedback: DB save failed")
-        return JsonResponse({"ok": False, "error": "Server error saving your report. Please try again."}, status=500)
+        logger.exception("submit_feedback: DB save failed — continuing to send email")
 
     body = (
-        f"Bug Report — PDFix\n"
+        f"Bug Report \u2014 PDFix\n"
         f"{'='*40}\n"
         f"Feature : {feature}\n"
         f"Issue   : {issue}\n"
@@ -382,9 +381,10 @@ def submit_feedback(request):
             fail_silently=True,
         )
     except Exception:
-        pass  # DB already has the record; email failure is non-fatal.
+        pass
 
     return JsonResponse({"ok": True})
+
 
 
 @require_POST
@@ -397,11 +397,10 @@ def submit_suggestion(request):
     try:
         Suggestion.objects.create(description=description, why_needed=why_needed)
     except Exception:
-        logger.exception("submit_suggestion: DB save failed")
-        return JsonResponse({"ok": False, "error": "Server error saving your suggestion. Please try again."}, status=500)
+        logger.exception("submit_suggestion: DB save failed — continuing to send email")
 
     body = (
-        f"Suggestion — PDFix\n"
+        f"Suggestion \u2014 PDFix\n"
         f"{'='*40}\n"
         f"Description : {description}\n"
         f"Why needed  : {why_needed}\n"
