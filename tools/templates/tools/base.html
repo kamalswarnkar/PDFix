@@ -593,7 +593,48 @@
     <form id="csrfForm" style="display:none;">{% csrf_token %}</form>
     <script>
         function getCsrf() {
-            return document.getElementById('csrfForm').querySelector('[name=csrfmiddlewaretoken]').value;
+            try {
+                return document.getElementById('csrfForm').querySelector('[name=csrfmiddlewaretoken]').value;
+            } catch(e) {
+                console.error('PDFix: CSRF token not found', e);
+                return '';
+            }
+        }
+
+        function showErr(el, msg) {
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        async function postForm(url, data, errEl, step1, step2) {
+            let response;
+            try {
+                response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrf() },
+                    body: data
+                });
+            } catch (networkErr) {
+                console.error('PDFix: network error on', url, networkErr);
+                showErr(errEl, 'Network error — check your connection and try again.');
+                return;
+            }
+
+            let json;
+            try {
+                json = await response.json();
+            } catch (parseErr) {
+                console.error('PDFix: non-JSON response', response.status, response.statusText, parseErr);
+                showErr(errEl, 'Server error (' + response.status + '). Please try again later.');
+                return;
+            }
+
+            if (json.ok) {
+                step1.style.display = 'none';
+                step2.style.display = '';
+            } else {
+                showErr(errEl, json.error || 'Submission failed. Please try again.');
+            }
         }
 
         // ── Feedback (bug) ──
@@ -617,17 +658,12 @@
         document.getElementById('fbSubmitBtn').addEventListener('click', function() {
             const feature = document.getElementById('fbFeature').value.trim();
             const issue   = document.getElementById('fbIssue').value.trim();
-            if (!feature || !issue) { fbErr.textContent = 'Please select a feature and describe the issue.'; return; }
+            if (!feature || !issue) { showErr(fbErr, 'Please select a feature and describe the issue.'); return; }
             fbErr.textContent = '';
             const data = new FormData();
-            data.append('feature', feature); data.append('issue', issue);
-            fetch('/feedback/submit/', { method: 'POST', headers: {'X-CSRFToken': getCsrf()}, body: data })
-                .then(r => r.json())
-                .then(j => {
-                    if (j.ok) { fbStep1.style.display = 'none'; fbStep2.style.display = ''; }
-                    else { fbErr.textContent = j.error || 'Submission failed. Please try again.'; }
-                })
-                .catch(() => { fbErr.textContent = 'Network error. Please try again.'; });
+            data.append('feature', feature);
+            data.append('issue', issue);
+            postForm('/feedback/submit/', data, fbErr, fbStep1, fbStep2);
         });
 
         // ── Suggestion ──
@@ -651,17 +687,12 @@
         document.getElementById('sgSubmitBtn').addEventListener('click', function() {
             const desc = document.getElementById('sgDesc').value.trim();
             const why  = document.getElementById('sgWhy').value.trim();
-            if (!desc || !why) { sgErr.textContent = 'Please fill in both fields.'; return; }
+            if (!desc || !why) { showErr(sgErr, 'Please fill in both fields.'); return; }
             sgErr.textContent = '';
             const data = new FormData();
-            data.append('description', desc); data.append('why_needed', why);
-            fetch('/suggestion/submit/', { method: 'POST', headers: {'X-CSRFToken': getCsrf()}, body: data })
-                .then(r => r.json())
-                .then(j => {
-                    if (j.ok) { sgStep1.style.display = 'none'; sgStep2.style.display = ''; }
-                    else { sgErr.textContent = j.error || 'Submission failed. Please try again.'; }
-                })
-                .catch(() => { sgErr.textContent = 'Network error. Please try again.'; });
+            data.append('description', desc);
+            data.append('why_needed', why);
+            postForm('/suggestion/submit/', data, sgErr, sgStep1, sgStep2);
         });
     </script>
 </body>
