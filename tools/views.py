@@ -28,10 +28,16 @@ logger = logging.getLogger(__name__)
 
 def _send_email_bg(subject, message, from_email, recipient):
     """Fire-and-forget email in a daemon thread — never blocks the HTTP response."""
+    from django.conf import settings as _s
+    logger.info(
+        "PDFix email: backend=%s host=%s to=%s subject=%r",
+        _s.EMAIL_BACKEND, getattr(_s, "EMAIL_HOST", "N/A"), recipient, subject,
+    )
     try:
-        send_mail(subject, message, from_email, [recipient], fail_silently=True)
+        send_mail(subject, message, from_email, [recipient], fail_silently=False)
+        logger.info("PDFix email: sent OK to %s", recipient)
     except Exception:
-        pass
+        logger.exception("PDFix email: send FAILED")
 
 # Create your views here.
 
