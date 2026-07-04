@@ -20,6 +20,9 @@ from .services.reorder_pdf import reorder_pdf
 from .utils.cleanup import cleanup_old_files
 from .models import Feedback, Suggestion
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -358,8 +361,11 @@ def submit_feedback(request):
     if not feature or not issue:
         return JsonResponse({"ok": False, "error": "Please fill in all fields."}, status=400)
 
-    # Save to DB first — never lose data even if email fails.
-    Feedback.objects.create(feature=feature, issue=issue)
+    try:
+        Feedback.objects.create(feature=feature, issue=issue)
+    except Exception:
+        logger.exception("submit_feedback: DB save failed")
+        return JsonResponse({"ok": False, "error": "Server error saving your report. Please try again."}, status=500)
 
     body = (
         f"Bug Report — PDFix\n"
@@ -388,7 +394,11 @@ def submit_suggestion(request):
     if not description or not why_needed:
         return JsonResponse({"ok": False, "error": "Please fill in all fields."}, status=400)
 
-    Suggestion.objects.create(description=description, why_needed=why_needed)
+    try:
+        Suggestion.objects.create(description=description, why_needed=why_needed)
+    except Exception:
+        logger.exception("submit_suggestion: DB save failed")
+        return JsonResponse({"ok": False, "error": "Server error saving your suggestion. Please try again."}, status=500)
 
     body = (
         f"Suggestion — PDFix\n"
