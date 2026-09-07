@@ -34,10 +34,15 @@ RUN DJANGO_SECRET_KEY=build-only-placeholder \
     DEBUG=false \
     python manage.py collectstatic --noinput
 
-# Run as an unprivileged user; media/ is the only writable path needed.
-RUN mkdir -p /app/media \
+# Run as an unprivileged user. The code in /app stays root-owned and read-only;
+# only these two directories are writable:
+#   media/ - files being converted
+#   data/  - the SQLite fallback, used when DATABASE_URL is unset. It cannot
+#            live beside the code, because /app is not writable by this user.
+ENV SQLITE_PATH=/app/data/db.sqlite3
+RUN mkdir -p /app/media /app/data \
     && useradd --system --uid 1000 --home /app pdfix \
-    && chown -R pdfix:pdfix /app/media
+    && chown -R pdfix:pdfix /app/media /app/data
 USER pdfix
 
 EXPOSE 8000

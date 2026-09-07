@@ -175,12 +175,23 @@ if _database_url:
         }
     }
 else:
+    # SQLITE_PATH exists because the container runs as a non-root user against a
+    # root-owned /app, so the database cannot live next to the code.
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': os.environ.get("SQLITE_PATH") or BASE_DIR / 'db.sqlite3',
         }
     }
+    if not DEBUG and not TESTING:
+        # Loud, because this is silent data loss: hosts like Render have an
+        # ephemeral filesystem, so every deploy would discard all feedback.
+        print(
+            "WARNING: DATABASE_URL is not set, falling back to SQLite. On a "
+            "platform with an ephemeral filesystem this database is wiped on "
+            "every deploy. Provision Postgres and set DATABASE_URL.",
+            file=sys.stderr,
+        )
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
