@@ -1,50 +1,69 @@
-from pdf2image import convert_from_path
-import os
-import uuid
 import zipfile
-from django.conf import settings
+
+import pymupdf
+
+from ..uploads import ToolError, new_media_path, safe_stem
+
+# Rendered with PyMuPDF instead of pdf2image/poppler: no subprocess, no
+# system package, and pages stream one at a time instead of the whole
+# document being held in memory as bitmaps.
+DPI_CHOICES = (72, 150, 300)
+FORMATS = ("png", "jpg")
+MAX_PAGES = 300
 
 
-def pdf_to_images(files):
+def pdf_to_images(files, dpi=150, image_format="png"):
+    """Render every page of every PDF to an image, returned as one zip."""
+    dpi = dpi if dpi in DPI_CHOICES else 150
+    image_format = image_format if image_format in FORMATS else "png"
 
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+    filename, zip_path = new_media_path("_images.zip")
+    used_stems = {}
+    rendered = 0
 
-    zip_filename = f"{uuid.uuid4()}_images.zip"
-    zip_path = os.path.join(settings.MEDIA_ROOT, zip_filename)
-
-    with zipfile.ZipFile(zip_path, "w") as zipf:
-
-        for file in files:
-
-            input_filename = f"{uuid.uuid4()}_input.pdf"
-            input_path = os.path.join(settings.MEDIA_ROOT, input_filename)
-
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for upload in files:
+            upload.seek(0)
             try:
-                with open(input_path, "wb+") as f:
-                    if hasattr(file, "chunks"):
-                        for chunk in file.chunks():
-                            f.write(chunk)
-                    else:
-                        f.write(file)
+                document = pymupdf.open(stream=upload.read(), filetype="pdf")
+            except Exception as exc:
+                raise ToolError(
+                    f"'{upload.name}' could not be read. It may be corrupt or not a real PDF."
+                ) from exc
 
-                try:
-                    images = convert_from_path(input_path, dpi=300)
-                except Exception:
-                    raise Exception("PDF conversion failed")
+            with document:
+                if document.needs_pass:
+                    raise ToolError(
+                        f"'{upload.name}' is password-protected. Unlock it first."
+                    )
 
-                for i, image in enumerate(images):
-                    base_name = os.path.splitext(os.path.basename(file.name))[0]
-                    img_name = f"{base_name}_page_{i+1}.png"
-                    img_path = os.path.join(settings.MEDIA_ROOT, img_name)
+                rendered += document.page_count
+                if rendered > MAX_PAGES:
+                    raise ToolError(
+                        f"That is more than {MAX_PAGES} pages in one go. "
+                        "Please split the work into smaller batches."
+                    )
 
-                    try:
-                        image.save(img_path, "PNG")
-                        zipf.write(img_path, img_name)
-                    finally:
-                        if os.path.exists(img_path):
-                            os.remove(img_path)
-            finally:
-                if os.path.exists(input_path):
-                    os.remove(input_path)
+                # Two uploads called report.pdf must not overwrite each other
+                # inside the archive.
+                stem = safe_stem(upload.name, "document")
+                used_stems[stem] = used_stems.get(stem, 0) + 1
+                if used_stems[stem] > 1:
+                    stem = f"{stem}_{used_stems[stem]}"
 
-    return zip_filename
+                width = len(str(document.page_count))
+                for index, page in enumerate(document, start=1):
+                    pixmap = page.get_pixmap(dpi=dpi)
+                    data = (
+                        pixmap.tobytes("jpg", jpg_quality=88)
+                        if image_format == "jpg"
+                        else pixmap.tobytes("png")
+                    )
+                    archive.writestr(
+                        f"{stem}_page_{index:0{width}d}.{image_format}", data
+                    )
+
+    if rendered == 0:
+        raise ToolError("Those PDFs contain no pages.")
+
+    return filename

@@ -1,37 +1,33 @@
-from pypdf import PdfReader, PdfWriter
-import os
-import uuid
-from django.conf import settings
+import pikepdf
+
+from ..uploads import ToolError, new_media_path
+
 
 def unlock_pdf(file, pwd):
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+    """Remove password protection from a PDF, given the correct password.
 
-    input_name = f"{uuid.uuid4()}.pdf"
-    input_path = os.path.join(settings.MEDIA_ROOT, input_name)
+    The old version ignored the result of decrypt(), so a wrong password
+    produced an unrelated error further down. pikepdf reports it directly.
+    """
+    pwd = pwd or ""
 
+    file.seek(0)
     try:
-        with open(input_path, "wb") as f:
-            for chunk in file.chunks():
-                f.write(chunk)
-        
-        reader = PdfReader(input_path)
+        pdf = pikepdf.open(file, password=pwd)
+    except pikepdf.PasswordError:
+        raise ToolError(
+            "Incorrect password. Check it and try again - passwords are case-sensitive."
+        ) from None
+    except Exception as exc:
+        raise ToolError(
+            f"'{file.name}' could not be read. It may be corrupt or not a real PDF."
+        ) from exc
 
-        if reader.is_encrypted:
-            reader.decrypt(pwd)
+    with pdf:
+        if not pdf.is_encrypted:
+            raise ToolError("This PDF is not password-protected, so there is nothing to remove.")
 
-        writer = PdfWriter()
+        filename, output_path = new_media_path("_unlocked.pdf")
+        pdf.save(output_path)
 
-        for page in reader.pages:
-            writer.add_page(page)
-        
-        output_name = f"{uuid.uuid4()}_unlocked.pdf"
-        output_path = os.path.join(settings.MEDIA_ROOT, output_name)
-
-        with open(output_path, "wb") as f:
-            writer.write(f)
-        
-        return output_name
-    finally:
-        if os.path.exists(input_path):
-            os.remove(input_path)
-
+    return filename

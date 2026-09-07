@@ -1,45 +1,19 @@
 {% extends "tools/base.html" %}
 {% block meta_description %}
-    Merge multiple PDF files into one document quickly and securely with PDFix. Arrange pages easily and download the combined PDF instantly.
+    Merge multiple PDF files into one document quickly and securely with PDFix. Arrange them in any order and download the combined PDF instantly.
 {% endblock %}
 {% block title %}Merge PDF Online Free | Combine PDF Files - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
-        #previewContainer{
-            display:flex;
-            gap:15px;
-            flex-wrap:wrap;
-            margin-top:20px;
-            justify-content:center;
-        }
-
-        .file-card{
-            border:1px solid #ddd;
-            padding:10px;
-            border-radius:8px;
-            background:white;
-            width:140px;
-        }
-
-        .file-card button{
-            margin-top:5px;
-        }
-
-        .file-card canvas{
-            width:100%;
-        }
-
-
-        #submitBtn{
-            margin-top: 20px;
-        }
+        .file-card{ cursor:grab; }
+        #submitBtn{ margin-top:20px; }
     </style>
 {% endblock %}
 {% block content %}
     <h2>Merge PDF</h2>
 
-    {% include "tools/components/tool_desc.html" with text="Combine multiple PDF files into a single document quickly and securely. Upload your files, arrange them in the desired order, and download the merged PDF instantly." %}
+    {% include "tools/components/tool_desc.html" with text="Combine two or more PDFs into a single document. Upload your files, drag the cards to set the order, and download the merged PDF." %}
 
     {% include "tools/components/spinner.html" %}
 
@@ -50,33 +24,43 @@
         {% include "tools/components/uploader.html" with input_name="files" multiple=True accept_types=".pdf" %}
         <br>
         <div id="previewContainer" class="preview-container"></div>
-        <br>
+        <p id="statusMessage" style="font-size:13px;color:#666;margin-top:10px;">
+            Upload at least two PDFs, then drag the cards to set the merge order.
+        </p>
         <button type="submit" id="submitBtn">Merge</button>
     </form>
-    
+
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js"
+            integrity="sha512-csIng5zcB+XpulRUa+ev1zKo7zRNGpEaVfNB9On1no9KYTEY/rLGAEEpvgdw6nim1WdTuihZY1eqZ31K7/fZjw=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script>
         const container = document.getElementById("previewContainer");
-        if (container) {
+        const statusMessage = document.getElementById("statusMessage");
+
+        window.onFilesChanged = function(files) {
+            statusMessage.textContent = files.length < 2
+                ? "Upload at least two PDFs, then drag the cards to set the merge order."
+                : "Drag the cards to set the order the PDFs are joined in.";
+            window.defaultRenderFiles();
+        };
+
+        if (container && window.Sortable) {
             new Sortable(container, {
                 animation: 150,
                 onEnd: function() {
                     const reordered = [];
-                    document.querySelectorAll(".file-card").forEach(card => {
-                        const name = card.dataset.name;
-                        const file = window.filesArray.find(f => f.name === name);
-                        if (file) {
-                            reordered.push(file);
-                        }
+                    container.querySelectorAll(".file-card").forEach(card => {
+                        if (card._file) reordered.push(card._file);
                     });
-                    window.filesArray = reordered;
+                    if (reordered.length === window.filesArray.length) {
+                        window.filesArray = reordered;
+                    }
                 }
             });
         }
     </script>
 {% endblock %}
-</html>

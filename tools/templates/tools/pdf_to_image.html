@@ -1,15 +1,15 @@
 {% extends "tools/base.html" %}
 {% block meta_description %}
     Convert PDF pages into high-quality images such as PNG or JPG using PDFix free online PDF to image converter.
-{% endblock %}  
+{% endblock %}
 {% block title %}Convert PDF to Image Online Free | PDF to PNG/JPG - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
-    <h2>Convert PDF to Image(S)</h2>
+    <h2>Convert PDF to Images</h2>
 
-    {% include "tools/components/tool_desc.html" with text="Convert each page of your PDF into high-quality image files for easy sharing or editing." %}
+    {% include "tools/components/tool_desc.html" with text="Turn every page of your PDF into an image file. You get a zip with one image per page, named so they stay in order." %}
 
     {% include "tools/components/spinner.html" %}
 
@@ -20,6 +20,26 @@
         {% include "tools/components/uploader.html" with input_name="files" multiple=True accept_types=".pdf" %}
         <br>
         <div id="previewContainer" class="preview-container"></div>
+
+        <div class="options">
+            <div class="option">
+                <label for="formatSelect">Image format</label>
+                <select name="format" id="formatSelect">
+                    <option value="png" selected>PNG — sharp text, larger files</option>
+                    <option value="jpg">JPG — smaller files</option>
+                </select>
+            </div>
+            <div class="option">
+                <label for="dpiSelect">Resolution</label>
+                <select name="dpi" id="dpiSelect">
+                    <option value="72">72 DPI — screen preview</option>
+                    <option value="150" selected>150 DPI — recommended</option>
+                    <option value="300">300 DPI — print quality</option>
+                </select>
+                <span class="hint">Higher DPI means bigger images and a slower conversion.</span>
+            </div>
+        </div>
+
         <br>
         <button type="submit" id="submitBtn">Convert</button>
     </form>

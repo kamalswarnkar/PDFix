@@ -1,11 +1,12 @@
 from django.urls import path
 from django.views.generic import TemplateView
+
 from . import views
 
 urlpatterns = [
     path("", views.home, name="home"),
     path("merge-pdf/", views.merge_pdf, name="merge_pdf"),
-    path("split-pdf/", views.split_pdf_view, name = "split_pdf"),
+    path("split-pdf/", views.split_pdf_view, name="split_pdf"),
     path("compress-pdf/", views.compress_pdf_view, name="compress_pdf"),
     path("compress-pdf-100kb/", views.compress_100kb_view, name="compress_100kb"),
     path("extract-pages/", views.extract_pages_view, name="extract_pages"),
@@ -17,11 +18,17 @@ urlpatterns = [
     path("protect-pdf/", views.protect_pdf_view, name="protect_pdf"),
     path("unlock-pdf/", views.unlock_pdf_view, name="unlock_pdf"),
     path("reorder-pdf/", views.reorder_pdf_view, name="reorder_pdf"),
+
     path("feedback/submit/", views.submit_feedback, name="submit_feedback"),
     path("suggestion/submit/", views.submit_suggestion, name="submit_suggestion"),
-    path("sitemap.xml", TemplateView.as_view(template_name="sitemap.xml", content_type="application/xml")),
-    path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
-    path("privacy/", views.privacy_view),
-    path("terms/", views.terms_view),
-    path("about/", views.about_view),
-]
+
+    path("privacy/", views.privacy_view, name="privacy"),
+    path("terms/", views.terms_view, name="terms"),
+    path("about/", views.about_view, name="about"),
+    path("healthz", views.healthz, name="healthz"),
+
+    path("sitemap.xml", TemplateView.as_view(
+        template_name="sitemap.xml", content_type="application/xml"), name="sitemap"),
+    path("robots.txt", TemplateView.as_view(
+        template_name="robots.txt", content_type="text/plain"), name="robots"),
+]

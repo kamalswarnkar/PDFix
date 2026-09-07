@@ -1,0 +1,1 @@
+web: gunicorn config.wsgi:application --workers ${WEB_CONCURRENCY:-2} --threads 2 --timeout 300 --graceful-timeout 30 --max-requests 200 --max-requests-jitter 50 --access-logfile - --error-logfile -

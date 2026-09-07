@@ -9,7 +9,7 @@
 {% block content %}
     <h2>Compress PDF</h2>
 
-    {% include "tools/components/tool_desc.html" with text="Reduce the size of your PDF files without significantly affecting quality. Smaller PDFs are easier to share and upload." %}
+    {% include "tools/components/tool_desc.html" with text="Reduce the size of your PDF so it is easier to email or upload. If a file is already well optimised, PDFix returns the original rather than a larger one." %}
 
     {% include "tools/components/spinner.html" %}
 
@@ -20,8 +20,19 @@
         {% include "tools/components/uploader.html" with input_name="file" multiple=False accept_types=".pdf" %}
         <br>
         <div id="previewContainer" class="preview-container"></div>
-        <br>
-        <p style="font-size:13px; color:#6b7280; margin:8px 0;">
+
+        <div class="options">
+            <div class="option">
+                <label for="levelSelect">Compression level</label>
+                <select name="level" id="levelSelect">
+                    <option value="balanced" selected>Balanced — recommended</option>
+                    <option value="small">Smallest file — lower image quality</option>
+                    <option value="quality">Best quality — larger file</option>
+                </select>
+            </div>
+        </div>
+
+        <p style="font-size:13px; color:#6b7280; margin:14px 0;">
             ⏱ Compression typically takes 10–60 seconds depending on file size.
         </p>
         <button type="submit">Compress PDF</button>

@@ -1,73 +1,105 @@
-from pypdf import PdfReader, PdfWriter
+import logging
 import os
-import uuid
-import subprocess
 import shutil
+import subprocess
+
 from django.conf import settings
 
-# def compress_pdf(file):
-#     reader = PdfReader(file)
-#     writer = PdfWriter()
+from ..uploads import ToolError, new_media_path, read_pdf, save_upload
 
-#     for page in reader.pages:
-#         writer.add_page(page)
+logger = logging.getLogger(__name__)
 
-#     for page in writer.pages:
-#         page.compress_content_streams()
+# Ghostscript presets, worst-to-best quality. "balanced" matches the old
+# hard-coded /ebook behaviour.
+LEVELS = {
+    "small": "/screen",
+    "balanced": "/ebook",
+    "quality": "/printer",
+}
 
-#     filename = f"{uuid.uuid4()}_compressed.pdf"
-#     os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-#     output_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-#     with open(output_path, "wb") as f:
-#         writer.write(f)
-
-#     return filename
-
-def _resolve_ghostscript():
-    for candidate in ("gs", "gswin64c"):
+def resolve_ghostscript():
+    """Locate the Ghostscript binary, or raise a message the user can act on."""
+    for candidate in ("gs", "gswin64c", "gswin32c"):
         resolved = shutil.which(candidate)
         if resolved:
             return resolved
 
-    windows_fallback = r"C:\Program Files\gs\gs10.06.0\bin\gswin64c.exe"
-    if os.path.exists(windows_fallback):
-        return windows_fallback
+    # Windows installers do not always add themselves to PATH.
+    for root in (r"C:\Program Files\gs", r"C:\Program Files (x86)\gs"):
+        if os.path.isdir(root):
+            for version in sorted(os.listdir(root), reverse=True):
+                exe = os.path.join(root, version, "bin", "gswin64c.exe")
+                if os.path.exists(exe):
+                    return exe
 
-    raise RuntimeError("Ghostscript executable not found. Install Ghostscript and ensure 'gs' or 'gswin64c' is in PATH.")
+    logger.error("Ghostscript not found on PATH; PDF compression is unavailable")
+    raise ToolError("PDF compression is temporarily unavailable. Please try again later.")
 
 
-def compress_pdf(file):
+def run_ghostscript(args, timeout=None):
+    """Run Ghostscript, returning True on success. Never raises for a bad PDF."""
+    try:
+        result = subprocess.run(
+            args,
+            timeout=timeout or settings.CONVERT_TIMEOUT_SECONDS,
+            capture_output=True,
+        )
+    except subprocess.TimeoutExpired:
+        logger.warning("Ghostscript timed out after %ss", timeout)
+        raise ToolError(
+            "This PDF took too long to compress. Try a smaller file."
+        ) from None
 
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+    if result.returncode != 0:
+        logger.warning("Ghostscript failed (%s): %s", result.returncode, result.stderr[-500:])
+        return False
+    return True
 
-    input_filename = f"{uuid.uuid4()}_input.pdf"
-    output_filename = f"{uuid.uuid4()}_compressed.pdf"
 
-    input_path = os.path.join(settings.MEDIA_ROOT, input_filename)
-    output_path = os.path.join(settings.MEDIA_ROOT, output_filename)
+def compress_pdf(file, level="balanced"):
+    """Shrink a PDF with Ghostscript.
 
-    # save uploaded file
-    with open(input_path, "wb+") as f:
-        for chunk in file.chunks():
-            f.write(chunk)
+    If Ghostscript cannot beat the original size - common for already-optimised
+    PDFs - the original is returned rather than a larger "compressed" file.
+    """
+    preset = LEVELS.get(level, LEVELS["balanced"])
 
-    gs_path = _resolve_ghostscript()
+    read_pdf(file, file.name)          # reject corrupt/encrypted input up front
+    file.seek(0)
+    input_path = save_upload(file, "_input.pdf")
 
-    command = [
-        gs_path,
-        "-sDEVICE=pdfwrite",
-        "-dCompatibilityLevel=1.4",
-        "-dPDFSETTINGS=/ebook",
-        "-dNOPAUSE",
-        "-dQUIET",
-        "-dBATCH",
-        f"-sOutputFile={output_path}",
-        input_path
-    ]
+    try:
+        filename, output_path = new_media_path("_compressed.pdf")
+        gs = resolve_ghostscript()
 
-    subprocess.run(command, check=True)
+        ok = run_ghostscript([
+            gs,
+            "-sDEVICE=pdfwrite",
+            "-dCompatibilityLevel=1.4",
+            f"-dPDFSETTINGS={preset}",
+            "-dDetectDuplicateImages=true",
+            "-dCompressFonts=true",
+            "-dNOPAUSE",
+            "-dQUIET",
+            "-dBATCH",
+            "-dSAFER",
+            f"-sOutputFile={output_path}",
+            input_path,
+        ])
 
-    os.remove(input_path)
+        original_size = os.path.getsize(input_path)
+        if not ok or not os.path.exists(output_path):
+            raise ToolError(
+                "This PDF could not be compressed. It may use unusual fonts or images."
+            )
 
-    return output_filename
+        if os.path.getsize(output_path) >= original_size:
+            # Already optimised - hand back the original instead of a bigger file.
+            shutil.copyfile(input_path, output_path)
+
+        return filename
+    finally:
+        # The old version leaked this file whenever Ghostscript failed.
+        if os.path.exists(input_path):
+            os.remove(input_path)

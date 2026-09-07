@@ -1,52 +1,58 @@
 <script>
     (function() {
-        const form = document.querySelector("form");
-        const loader = document.getElementById("loader");
-        const button = document.querySelector("button[type='submit']");
-        const statusText = document.getElementById("statusText");
-
+        const form = document.querySelector("form[enctype='multipart/form-data']");
         if (!form) return;
 
-        // ponytail: listen in capture phase so we run AFTER uploader_script's
-        // submit handler (which calls e.preventDefault() on empty filesArray).
-        // We check defaultPrevented to skip the spinner when validation fails.
+        const loader = document.getElementById("loader");
+        const button = form.querySelector("button[type='submit']");
+        const statusText = document.getElementById("statusText");
+        // Buttons say "Merge", "Compress PDF", "Rotate"… so remember the real
+        // label instead of resetting every button to "Submit".
+        const originalLabel = button ? button.innerText : "";
+        const GIVE_UP_MS = 6 * 60 * 1000;
+
+        // uploader_script's submit handler runs first (it is included above this
+        // one) and calls preventDefault() when nothing is selected, so checking
+        // defaultPrevented keeps the spinner off a submission that never happened.
         form.addEventListener("submit", function(e) {
-            if (e.defaultPrevented) return;   // validation blocked submit — do nothing
+            if (e.defaultPrevented) return;
 
             if (loader) loader.style.display = "block";
-
             if (button) {
                 button.disabled = true;
-                button.innerText = "Processing...";
+                button.innerText = "Processing…";
             }
 
             let seconds = 0;
             const elapsed = setInterval(function() {
                 seconds++;
-                const min = Math.floor(seconds / 60);
-                const sec = seconds % 60;
-                const timeStr = min + ":" + (sec < 10 ? "0" : "") + sec;
-                if (button) button.innerText = "Processing... (" + timeStr + ")";
-                if (statusText) statusText.textContent = "Processing your file... (" + timeStr + ")";
+                const timeStr = Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
+                if (button) button.innerText = "Processing… (" + timeStr + ")";
+                if (statusText) statusText.textContent = "Processing your file… (" + timeStr + ")";
             }, 1000);
+
+            function finish() {
+                clearInterval(elapsed);
+                clearInterval(checkDownload);
+                clearTimeout(giveUp);
+                if (loader) loader.style.display = "none";
+                if (button) {
+                    button.disabled = false;
+                    button.innerText = originalLabel;
+                }
+                if (statusText) statusText.textContent = "Processing your file…";
+            }
 
             const checkDownload = setInterval(function() {
                 if (document.cookie.indexOf("fileDownload=true") !== -1) {
-                    if (loader) loader.style.display = "none";
-
-                    clearInterval(elapsed);
-
-                    if (button) {
-                        button.disabled = false;
-                        button.innerText = "Submit";
-                    }
-                    if (statusText) statusText.textContent = "Processing your file...";
-
                     document.cookie = "fileDownload=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
-                    clearInterval(checkDownload);
+                    finish();
                 }
             }, 500);
+
+            // Fallback so the form never stays locked if the download cookie
+            // never arrives (blocked cookies, aborted transfer).
+            const giveUp = setTimeout(finish, GIVE_UP_MS);
         });
     })();
 </script>

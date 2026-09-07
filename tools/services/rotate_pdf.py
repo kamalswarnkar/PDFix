@@ -1,33 +1,35 @@
-from pypdf import PdfReader, PdfWriter
-import os
-import uuid
-from django.conf import settings
+from pypdf import PdfWriter
 
-def rotate_pdf(file, angle):
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+from ..uploads import ToolError, new_media_path, read_pdf
 
-    input_file = f"{uuid.uuid4()}.pdf"
-    input_path = os.path.join(settings.MEDIA_ROOT, input_file)
+VALID_ANGLES = (90, 180, 270)
 
+
+def rotate_pdf(file, angle, pages=None):
+    """Rotate pages clockwise by `angle` degrees.
+
+    `pages` is an optional list of 1-based page numbers; None rotates everything.
+    Rotation is relative, so it stacks on any rotation the page already carries.
+    """
     try:
-        with open(input_path, "wb") as f:
-            for chunk in file.chunks():
-                f.write(chunk)
-        
-        reader = PdfReader(input_path)
-        writer = PdfWriter()
+        angle = int(angle)
+    except (TypeError, ValueError):
+        raise ToolError("Please choose a rotation angle.") from None
 
-        for page in reader.pages:
+    if angle not in VALID_ANGLES:
+        raise ToolError("Rotation must be 90, 180 or 270 degrees.")
+
+    reader = read_pdf(file, file.name)
+    targets = set(pages) if pages else None
+
+    writer = PdfWriter()
+    for number, page in enumerate(reader.pages, start=1):
+        if targets is None or number in targets:
             page.rotate(angle)
-            writer.add_page(page)
-        
-        output_name = f"{uuid.uuid4()}_rotated.pdf"
-        output_path = os.path.join(settings.MEDIA_ROOT, output_name)
+        writer.add_page(page)
 
-        with open(output_path, "wb") as f:
-            writer.write(f)
-        
-        return output_name
-    finally:
-        if os.path.exists(input_path):
-            os.remove(input_path)
+    filename, output_path = new_media_path("_rotated.pdf")
+    with open(output_path, "wb") as out:
+        writer.write(out)
+
+    return filename

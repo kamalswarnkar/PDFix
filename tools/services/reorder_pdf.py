@@ -1,46 +1,40 @@
-from pypdf import PdfReader, PdfWriter
-import os
-import uuid
-from django.conf import settings
+from pypdf import PdfWriter
+
+from ..uploads import ToolError, new_media_path, read_pdf
+
+
+def parse_order(order, total):
+    """Validate a '3,1,2' page order against a `total`-page document."""
+    parts = [part.strip() for part in (order or "").split(",") if part.strip()]
+    if not parts:
+        raise ToolError("Upload a PDF and wait for the page previews before submitting.")
+
+    pages = []
+    for part in parts:
+        if not part.isdigit():
+            raise ToolError(f"'{part}' is not a page number.")
+        pages.append(int(part))
+
+    if len(pages) != total or sorted(pages) != list(range(1, total + 1)):
+        raise ToolError(
+            f"The new order must list each of the {total} pages exactly once. "
+            "Reload the page and try again."
+        )
+
+    return pages
+
 
 def reorder_pdf(file, order):
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+    """Rewrite a PDF with its pages in the sequence given by `order`."""
+    reader = read_pdf(file, file.name)
+    pages = parse_order(order, len(reader.pages))
 
-    input_name = f"{uuid.uuid4()}.pdf"
-    input_path = os.path.join(settings.MEDIA_ROOT, input_name)
+    writer = PdfWriter()
+    for number in pages:
+        writer.add_page(reader.pages[number - 1])
 
-    try:
-        with open(input_path, "wb") as f:
-            for chunk in file.chunks():
-                f.write(chunk)
-        
-        reader = PdfReader(input_path)
-        writer = PdfWriter()
+    filename, output_path = new_media_path("_reordered.pdf")
+    with open(output_path, "wb") as out:
+        writer.write(out)
 
-        if not order:
-            raise ValueError("Invalid page order")
-
-        parts = [part.strip() for part in order.split(",")]
-
-        if not parts or any(not part for part in parts):
-            raise ValueError("Invalid page order")
-
-        pages = list(map(int, parts))
-        total_pages = len(reader.pages)
-
-        if len(pages) != total_pages or sorted(pages) != list(range(1, total_pages + 1)):
-            raise ValueError("Invalid page order")
-
-        for p in pages:
-            writer.add_page(reader.pages[p-1])
-        
-        output_name = f"{uuid.uuid4()}_reordered.pdf"
-        output_path = os.path.join(settings.MEDIA_ROOT, output_name)
-
-        with open(output_path, "wb") as f:
-            writer.write(f)
-        
-        return output_name
-    finally:
-        if os.path.exists(input_path):
-            os.remove(input_path)
+    return filename

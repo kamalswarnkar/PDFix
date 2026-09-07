@@ -1,8 +1,10 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-C2B0CGLHDZ"></script>
     <script>
@@ -36,7 +38,7 @@
                     "name":"Are my files secure?",
                     "acceptedAnswer":{
                         "@type":"Answer",
-                        "text":"Yes. Files uploaded to PDFix are processed automatically and deleted shortly after processing."
+                        "text":"Yes. Files are processed on the server and deleted as soon as your download starts. Nothing is kept."
                     }
                 },
                 {
@@ -44,7 +46,7 @@
                     "name":"Do you store uploaded files?",
                     "acceptedAnswer":{
                         "@type":"Answer",
-                        "text":"No. Files are temporarily processed and automatically removed from the server to protect your privacy."
+                        "text":"No. Uploads are deleted straight after processing, and results are deleted as they are downloaded."
                     }
                 },
                 {
@@ -145,6 +147,73 @@
 
         .drop-zone.dragover{
             background:#f1f6ff;
+            border-color:#e5322d;
+        }
+
+        .drop-zone .drop-hint{
+            margin:8px 0 0 0;
+            font-size:12px;
+            color:#9ca3af;
+        }
+
+        /* Shared option rows (page size, DPI, quality, rotation angle …) */
+        .options{
+            display:flex;
+            flex-wrap:wrap;
+            gap:18px;
+            justify-content:center;
+            align-items:flex-end;
+            max-width:480px;
+            margin:20px auto 0 auto;
+        }
+
+        .option{
+            display:flex;
+            flex-direction:column;
+            gap:5px;
+            text-align:left;
+        }
+
+        .option label{
+            font-size:12px;
+            font-weight:600;
+            color:#374151;
+        }
+
+        .option select,
+        .option input{
+            border:1px solid #d1d5db;
+            border-radius:5px;
+            padding:9px 10px;
+            font-size:14px;
+            font-family:inherit;
+            color:#374151;
+            background:white;
+            min-width:150px;
+        }
+
+        .option select:focus,
+        .option input:focus,
+        .password-field input:focus{
+            outline:2px solid #e5322d;
+            outline-offset:1px;
+        }
+
+        .option .hint{
+            font-size:11px;
+            color:#9ca3af;
+        }
+
+        button:disabled{
+            background:#d1d5db;
+            cursor:not-allowed;
+        }
+
+        button:focus-visible,
+        .tool-card:focus-visible,
+        a:focus-visible{
+            outline:2px solid #e5322d;
+            outline-offset:2px;
         }
 
         .tools-grid{
@@ -514,9 +583,9 @@
 
     <footer>
         PDFix — Free Online PDF Tools<br>
-        <a href="/about/">About</a> |
-        <a href="/privacy/">Privacy Policy</a> |
-        <a href="/terms/">Terms of Service</a>
+        <a href="{% url 'about' %}">About</a> |
+        <a href="{% url 'privacy' %}">Privacy Policy</a> |
+        <a href="{% url 'terms' %}">Terms of Service</a>
     </footer>
 
     <!-- ── Floating Buttons ── -->

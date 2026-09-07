@@ -6,45 +6,14 @@
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
-        #previewContainer{
-            display:flex;
-            gap:15px;
-            flex-wrap:wrap;
-            margin-top:20px;
-            justify-content:center;
-        }
-
-        .image-card{
-            border:1px solid #ddd;
-            padding:10px;
-            border-radius:8px;
-            background:white;
-            width:140px;
-            cursor:grab;
-        }
-
-        .image-card img{
-            width:100%;
-            height: auto;
-            border-radius:4px;
-        }
-
-        .image-card button{
-            margin-top:5px;
-        }
-
-
-        #statusMessage{
-            font-size:13px;
-            color:#666;
-            margin-top:10px;
-        }
+        .file-card{ cursor:grab; }
+        #statusMessage{ font-size:13px; color:#666; margin-top:10px; }
     </style>
 {% endblock %}
 {% block content %}
-    <h2>Convert Image(s) to PDF</h2>
+    <h2>Convert Images to PDF</h2>
 
-    {% include "tools/components/tool_desc.html" with text="Convert images such as JPG or PNG files into a single PDF document quickly and easily." %}
+    {% include "tools/components/tool_desc.html" with text="Turn JPG, PNG or WebP images into a single PDF. Photos keep their full resolution and phone-camera rotation is corrected automatically." %}
 
     {% include "tools/components/spinner.html" %}
 
@@ -52,10 +21,22 @@
 
     <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
-        {% include "tools/components/uploader.html" with input_name="images" multiple=True accept_types=".png,.jpg,.jpeg" %}
+        {% include "tools/components/uploader.html" with input_name="images" multiple=True accept_types=".png,.jpg,.jpeg,.webp" %}
         <br>
         <div id="previewContainer" class="preview-container"></div>
         <p id="statusMessage">Upload images, then drag the previews to set their order in the PDF.</p>
+
+        <div class="options">
+            <div class="option">
+                <label for="pageSizeSelect">Page size</label>
+                <select name="page_size" id="pageSizeSelect">
+                    <option value="a4" selected>A4 — centred on a white page</option>
+                    <option value="fit">Fit to image — no white borders</option>
+                </select>
+                <span class="hint">A4 pages auto-rotate to landscape for wide images.</span>
+            </div>
+        </div>
+
         <br>
         <button type="submit">Convert to PDF</button>
     </form>
@@ -63,37 +44,32 @@
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js"
+            integrity="sha512-csIng5zcB+XpulRUa+ev1zKo7zRNGpEaVfNB9On1no9KYTEY/rLGAEEpvgdw6nim1WdTuihZY1eqZ31K7/fZjw=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script>
         const container = document.getElementById("previewContainer");
         const statusMessage = document.getElementById("statusMessage");
 
         window.onFilesChanged = function(files) {
-            if (statusMessage) {
-                statusMessage.textContent = files.length === 0
-                    ? "Upload images, then drag the previews to set their order in the PDF."
-                    : "Drag the image cards to reorder them before converting.";
-            }
-            if (typeof window.defaultRenderFiles === "function") {
-                window.defaultRenderFiles();
-            }
+            statusMessage.textContent = files.length === 0
+                ? "Upload images, then drag the previews to set their order in the PDF."
+                : "Drag the image cards to reorder them before converting.";
+            window.defaultRenderFiles();
         };
 
-        if (container) {
+        if (container && window.Sortable) {
             new Sortable(container, {
                 animation: 150,
                 onEnd: function() {
                     const reordered = [];
-                    document.querySelectorAll(".file-card").forEach(card => {
-                        const name = card.dataset.name;
-                        const file = window.filesArray.find(f => f.name === name);
-                        if (file) {
-                            reordered.push(file);
-                        }
+                    container.querySelectorAll(".file-card").forEach(card => {
+                        if (card._file) reordered.push(card._file);
                     });
-                    window.filesArray = reordered;
+                    if (reordered.length === window.filesArray.length) {
+                        window.filesArray = reordered;
+                    }
                 }
             });
         }

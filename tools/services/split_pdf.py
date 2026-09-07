@@ -1,28 +1,33 @@
-from pypdf import PdfReader, PdfWriter
-import os
-import uuid
+import io
 import zipfile
-from django.conf import settings
+
+from pypdf import PdfWriter
+
+from ..uploads import ToolError, new_media_path, read_pdf, safe_stem
+
 
 def split_pdf(file):
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+    """Split every page into its own PDF, returned as a zip.
 
-    reader = PdfReader(file)
-    zipfilename = f"{uuid.uuid4()}_split_pdf.zip"
-    zip_path = os.path.join(settings.MEDIA_ROOT, zipfilename)
+    Pages are built in memory and written straight into the archive. The old
+    version wrote each page to media/page_N.pdf first, so two concurrent
+    requests overwrote each other's temp files.
+    """
+    reader = read_pdf(file, file.name)
+    total = len(reader.pages)
+    if total < 2:
+        raise ToolError("This PDF has only one page, so there is nothing to split.")
 
-    with zipfile.ZipFile(zip_path, "w") as zipf:
-        for i, page in enumerate(reader.pages):
+    stem = safe_stem(file.name, "page")
+    width = len(str(total))  # zero-pad so the pages sort correctly in a file browser
+
+    filename, zip_path = new_media_path("_split.zip")
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for index, page in enumerate(reader.pages, start=1):
             writer = PdfWriter()
             writer.add_page(page)
+            buffer = io.BytesIO()
+            writer.write(buffer)
+            archive.writestr(f"{stem}_page_{index:0{width}d}.pdf", buffer.getvalue())
 
-            pdf_filename = f"page_{i + 1}.pdf"
-            pdf_path = os.path.join(settings.MEDIA_ROOT, pdf_filename)
-
-            with open(pdf_path, "wb") as f:
-                writer.write(f)
-            
-            zipf.write(pdf_path, pdf_filename)
-
-            os.remove(pdf_path)
-    return zipfilename
+    return filename

@@ -1,118 +1,106 @@
+import logging
 import os
-import uuid
-import subprocess
-import shutil
-from django.conf import settings
+
+from ..uploads import ToolError, new_media_path, read_pdf, save_upload
+from .compress_pdf import resolve_ghostscript, run_ghostscript
+
+logger = logging.getLogger(__name__)
+
+# ponytail: fixed ladder of five passes, stopping at the first that hits target.
+# A binary search over JPEG quality would land closer to the target, but each
+# probe costs a full Ghostscript run - not worth it until users complain.
+ATTEMPTS = (
+    {"pdfsettings": "/ebook", "resolution": 110, "jpegq": 55},
+    {"pdfsettings": "/ebook", "resolution": 96, "jpegq": 50},
+    {"pdfsettings": "/screen", "resolution": 90, "jpegq": 45},
+    {"pdfsettings": "/screen", "resolution": 84, "jpegq": 40},
+    {"pdfsettings": "/screen", "resolution": 72, "jpegq": 35},
+)
 
 
-def save_best_output(output_filename, output_path, size_kb, best_output_filename, best_output_path, best_size_kb):
-
-    if best_size_kb is None or size_kb < best_size_kb:
-        if best_output_path and os.path.exists(best_output_path):
-            os.remove(best_output_path)
-        return output_filename, output_path, size_kb
-
-    if os.path.exists(output_path):
-        os.remove(output_path)
-
-    return best_output_filename, best_output_path, best_size_kb
-
-
-def _resolve_ghostscript():
-    for candidate in ("gs", "gswin64c"):
-        resolved = shutil.which(candidate)
-        if resolved:
-            return resolved
-
-    windows_fallback = r"C:\Program Files\gs\gs10.06.0\bin\gswin64c.exe"
-    if os.path.exists(windows_fallback):
-        return windows_fallback
-
-    raise RuntimeError("Ghostscript executable not found. Install Ghostscript and ensure 'gs' or 'gswin64c' is in PATH.")
+def _command(gs, attempt, output_path, input_path):
+    return [
+        gs,
+        "-sDEVICE=pdfwrite",
+        "-dCompatibilityLevel=1.4",
+        f"-dPDFSETTINGS={attempt['pdfsettings']}",
+        "-dDetectDuplicateImages=true",
+        "-dCompressFonts=true",
+        "-dAutoFilterColorImages=false",
+        "-dAutoFilterGrayImages=false",
+        "-dColorImageFilter=/DCTEncode",
+        "-dGrayImageFilter=/DCTEncode",
+        f"-dJPEGQ={attempt['jpegq']}",
+        "-dDownsampleColorImages=true",
+        "-dDownsampleGrayImages=true",
+        "-dDownsampleMonoImages=true",
+        "-dColorImageDownsampleType=/Bicubic",
+        "-dGrayImageDownsampleType=/Bicubic",
+        "-dMonoImageDownsampleType=/Subsample",
+        f"-dColorImageResolution={attempt['resolution']}",
+        f"-dGrayImageResolution={attempt['resolution']}",
+        f"-dMonoImageResolution={attempt['resolution']}",
+        "-dNOPAUSE",
+        "-dQUIET",
+        "-dBATCH",
+        "-dSAFER",
+        f"-sOutputFile={output_path}",
+        input_path,
+    ]
 
 
 def compress_pdf_to_size(file, target_kb=100):
+    """Compress towards `target_kb`, keeping the smallest result achieved.
 
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+    Returns the best filename even when the target is missed - the old version
+    could return None here, which the view then fed to os.path.join().
+    """
+    read_pdf(file, file.name)          # reject corrupt/encrypted input up front
+    file.seek(0)
+    input_path = save_upload(file, "_input.pdf")
 
-    input_filename = f"{uuid.uuid4()}_input.pdf"
-    input_path = os.path.join(settings.MEDIA_ROOT, input_filename)
+    best_filename = None
+    best_path = None
+    best_kb = None
 
-    with open(input_path, "wb+") as f:
-        for chunk in file.chunks():
-            f.write(chunk)
+    try:
+        if os.path.getsize(input_path) / 1024 <= target_kb:
+            # Already small enough; running Ghostscript could only make it worse.
+            filename, output_path = new_media_path("_compressed.pdf")
+            os.replace(input_path, output_path)
+            return filename
 
-    gs_path = _resolve_ghostscript()
+        gs = resolve_ghostscript()
 
-    best_output_filename = None
-    best_output_path = None
-    best_size_kb = None
+        for attempt in ATTEMPTS:
+            filename, output_path = new_media_path("_compressed.pdf")
 
-    attempts = [
-        {"pdfsettings": "/ebook", "resolution": 110, "jpegq": 55},
-        {"pdfsettings": "/ebook", "resolution": 96, "jpegq": 50},
-        {"pdfsettings": "/screen", "resolution": 90, "jpegq": 45},
-        {"pdfsettings": "/screen", "resolution": 84, "jpegq": 40},
-        {"pdfsettings": "/screen", "resolution": 72, "jpegq": 35},
-    ]
+            if not run_ghostscript(_command(gs, attempt, output_path, input_path)):
+                if os.path.exists(output_path):
+                    os.remove(output_path)
+                continue
 
-    for attempt in attempts:
+            size_kb = os.path.getsize(output_path) / 1024
 
-        output_filename = f"{uuid.uuid4()}_compressed.pdf"
-        output_path = os.path.join(settings.MEDIA_ROOT, output_filename)
-
-        command = [
-            gs_path,
-            "-sDEVICE=pdfwrite",
-            "-dCompatibilityLevel=1.4",
-            f"-dPDFSETTINGS={attempt['pdfsettings']}",
-            "-dDetectDuplicateImages=true",
-            "-dCompressFonts=true",
-            "-dAutoFilterColorImages=false",
-            "-dAutoFilterGrayImages=false",
-            "-dColorImageFilter=/DCTEncode",
-            "-dGrayImageFilter=/DCTEncode",
-            f"-dJPEGQ={attempt['jpegq']}",
-            "-dDownsampleColorImages=true",
-            "-dDownsampleGrayImages=true",
-            "-dDownsampleMonoImages=true",
-            "-dColorImageDownsampleType=/Bicubic",
-            "-dGrayImageDownsampleType=/Bicubic",
-            "-dMonoImageDownsampleType=/Subsample",
-            f"-dColorImageResolution={attempt['resolution']}",
-            f"-dGrayImageResolution={attempt['resolution']}",
-            f"-dMonoImageResolution={attempt['resolution']}",
-            "-dNOPAUSE",
-            "-dQUIET",
-            "-dBATCH",
-            f"-sOutputFile={output_path}",
-            input_path
-        ]
-
-        try:
-            subprocess.run(command, check=True)
-        except subprocess.CalledProcessError:
-            if os.path.exists(output_path):
+            if best_kb is None or size_kb < best_kb:
+                if best_path and os.path.exists(best_path):
+                    os.remove(best_path)
+                best_filename, best_path, best_kb = filename, output_path, size_kb
+            elif os.path.exists(output_path):
                 os.remove(output_path)
-            continue
 
-        size_kb = os.path.getsize(output_path) / 1024
+            if size_kb <= target_kb:
+                break
 
-        best_output_filename, best_output_path, best_size_kb = save_best_output(
-            output_filename,
-            output_path,
-            size_kb,
-            best_output_filename,
-            best_output_path,
-            best_size_kb
-        )
+        if best_filename is None:
+            raise ToolError(
+                "This PDF could not be compressed. It may use unusual fonts or images."
+            )
 
-        if size_kb <= target_kb:
-            if os.path.exists(input_path):
-                os.remove(input_path)
-            return output_filename
+        if best_kb > target_kb:
+            logger.info("compress_to_size: best %.0f KB, target %s KB", best_kb, target_kb)
 
-    if os.path.exists(input_path):
-        os.remove(input_path)
-
-    return best_output_filename
+        return best_filename
+    finally:
+        if os.path.exists(input_path):
+            os.remove(input_path)

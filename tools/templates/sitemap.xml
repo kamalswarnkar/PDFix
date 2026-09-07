@@ -1,60 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-{% autoescape off %}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/merge-pdf/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/split-pdf/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/compress-pdf/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/compress-pdf-100kb/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/extract-pages/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/image-to-pdf/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/pdf-to-image/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/rotate-pdf/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/protect-pdf/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/unlock-pdf/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/reorder-pdf/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/docx-to-pdf/</loc>
-    </url>
-
-    <url>
-        <loc>{{ request.scheme }}://{{ request.get_host }}/pdf-to-docx/</loc>
-    </url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'home' %}</loc><priority>1.0</priority></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'merge_pdf' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'split_pdf' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'compress_pdf' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'compress_100kb' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'extract_pages' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'image_to_pdf' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'pdf_to_image' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'rotate_pdf' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'protect_pdf' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'unlock_pdf' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'reorder_pdf' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'docx_to_pdf' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'pdf_to_docx' %}</loc></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'about' %}</loc><priority>0.3</priority></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'privacy' %}</loc><priority>0.3</priority></url>
+    <url><loc>{{ request.scheme }}://{{ request.get_host }}{% url 'terms' %}</loc><priority>0.3</priority></url>
 </urlset>
-{% endautoescape %}

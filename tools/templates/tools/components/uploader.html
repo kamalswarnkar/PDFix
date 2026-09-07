@@ -1,6 +1,15 @@
-<div class="drop-zone" id="dropZone">
-    <div style="font-size:32px;line-height:1;margin-bottom:8px;">📂</div>
+<div class="drop-zone" id="dropZone" tabindex="0" role="button"
+     aria-label="Choose a file to upload, or drop one here">
+    <div style="font-size:32px;line-height:1;margin-bottom:8px;" aria-hidden="true">📂</div>
     <p style="margin:0 0 4px 0;font-weight:600;color:#333;">Drag &amp; drop your file here</p>
     <p style="margin:0;font-size:13px;color:#888;">or <span style="color:#e5322d;font-weight:600;text-decoration:underline;">click to browse files</span></p>
-    <input type="file" id="fileInput" name="{{ input_name }}" {% if multiple %}multiple{% endif %} accept="{{ accept_types|default:'.pdf,.doc,.docx,.png,.jpg,.jpeg' }}" style="display:none">
+    <p class="drop-hint">
+        Up to {{ max_upload_mb|default:50 }} MB per file{% if multiple %}, {{ max_upload_files|default:25 }} files at a time{% endif %}
+    </p>
+    <input type="file" id="fileInput" name="{{ input_name }}"
+           {% if multiple %}multiple{% endif %}
+           accept="{{ accept_types|default:'.pdf,.doc,.docx,.png,.jpg,.jpeg' }}"
+           data-max-mb="{{ max_upload_mb|default:50 }}"
+           data-max-files="{{ max_upload_files|default:25 }}"
+           style="display:none">
 </div>

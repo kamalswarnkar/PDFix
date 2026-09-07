@@ -12,8 +12,9 @@
         const isMultiple = fileInput.hasAttribute("multiple");
         const acceptAttr = fileInput.getAttribute("accept") || "";
         const allowedExtensions = acceptAttr ? acceptAttr.split(",").map(ext => ext.trim().toLowerCase()) : [];
+        const maxBytes = (parseInt(fileInput.dataset.maxMb, 10) || 50) * 1024 * 1024;
+        const maxFiles = parseInt(fileInput.dataset.maxFiles, 10) || 25;
 
-        // Global/scoped file list
         window.filesArray = [];
 
         function showError(msg) {
@@ -26,36 +27,30 @@
         }
 
         function clearError() {
-            if (errorAlert) {
-                errorAlert.style.display = "none";
-            }
+            if (errorAlert) errorAlert.style.display = "none";
         }
 
         function getFileExtension(filename) {
-            return filename.substring(filename.lastIndexOf(".")).toLowerCase();
+            const dot = filename.lastIndexOf(".");
+            return dot === -1 ? "" : filename.substring(dot).toLowerCase();
         }
 
         function isValidFileType(file) {
             if (allowedExtensions.length === 0) return true;
-            const ext = getFileExtension(file.name);
-            return allowedExtensions.includes(ext);
+            return allowedExtensions.includes(getFileExtension(file.name));
         }
 
         function formatBytes(bytes) {
             if (bytes === 0) return "0 Bytes";
             const k = 1024;
-            const sizes = ["Bytes", "KB", "MB"];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            const sizes = ["Bytes", "KB", "MB", "GB"];
+            const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
         }
 
         window.removeFile = function(index) {
             window.filesArray.splice(index, 1);
-            if (fileInput) fileInput.value = "";
-            triggerFilesChanged();
-        };
-
-        window.triggerFilesChanged = function() {
+            fileInput.value = "";
             triggerFilesChanged();
         };
 
@@ -66,6 +61,7 @@
                 window.defaultRenderFiles();
             }
         }
+        window.triggerFilesChanged = triggerFilesChanged;
 
         window.defaultRenderFiles = function() {
             if (!container) return;
@@ -81,7 +77,6 @@
 
                 if (ext === "pdf") {
                     cardType = "pdf";
-                    iconChar = "📄";
                 } else if (ext === "docx" || ext === "doc") {
                     cardType = "word";
                     iconChar = "📘";
@@ -92,88 +87,104 @@
 
                 card.classList.add(cardType);
                 card.dataset.name = file.name;
+                // Hold the File itself so drag-reorder does not have to match by
+                // name - two uploads can legitimately share a filename.
+                card._file = file;
 
-                let iconHtml = `<div class="file-icon img-preview-container">${iconChar}</div>`;
-                
-                card.innerHTML = `
-                    <button type="button" class="remove-btn" onclick="removeFile(${index})">&times;</button>
-                    ${iconHtml}
-                    <div class="file-name" title="${file.name}">${file.name}</div>
-                    <div class="file-size">${formatBytes(file.size)}</div>
-                `;
+                // textContent for the name: a filename can contain markup.
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "remove-btn";
+                remove.setAttribute("aria-label", "Remove " + file.name);
+                remove.innerHTML = "&times;";
+                remove.addEventListener("click", () => window.removeFile(index));
 
+                const icon = document.createElement("div");
+                icon.className = "file-icon img-preview-container";
+                icon.textContent = iconChar;
+
+                const nameEl = document.createElement("div");
+                nameEl.className = "file-name";
+                nameEl.title = file.name;
+                nameEl.textContent = file.name;
+
+                const sizeEl = document.createElement("div");
+                sizeEl.className = "file-size";
+                sizeEl.textContent = formatBytes(file.size);
+
+                card.append(remove, icon, nameEl, sizeEl);
                 container.appendChild(card);
 
-                // For images, load actual thumbnail asynchronously
                 if (cardType === "image") {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const imgContainer = card.querySelector(".img-preview-container");
-                        if (imgContainer) {
-                            imgContainer.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 40px; object-fit: contain; border-radius: 4px;">`;
-                        }
-                    };
-                    reader.readAsDataURL(file);
+                    const url = URL.createObjectURL(file);
+                    const img = document.createElement("img");
+                    img.src = url;
+                    img.alt = "";
+                    img.style.cssText = "width:100%;height:40px;object-fit:contain;border-radius:4px;";
+                    img.onload = () => URL.revokeObjectURL(url);
+                    icon.textContent = "";
+                    icon.appendChild(img);
                 }
             });
-        }
+        };
 
         function handleFileSelection(newFiles) {
             clearError();
-            let hasInvalid = false;
-            let addedAny = false;
-
+            const problems = [];
             const filesToProcess = Array.from(newFiles);
 
+            function accept(file) {
+                if (!isValidFileType(file)) {
+                    problems.push(`"${file.name}" is not an accepted format.`);
+                    return false;
+                }
+                if (file.size === 0) {
+                    problems.push(`"${file.name}" is empty.`);
+                    return false;
+                }
+                if (file.size > maxBytes) {
+                    problems.push(`"${file.name}" is ${formatBytes(file.size)} — the limit is ${formatBytes(maxBytes)}.`);
+                    return false;
+                }
+                return true;
+            }
+
             if (!isMultiple) {
-                // Single file mode: overwrite
-                if (filesToProcess.length > 0) {
-                    const file = filesToProcess[0];
-                    if (isValidFileType(file)) {
-                        window.filesArray = [file];
-                        addedAny = true;
-                    } else {
-                        hasInvalid = true;
-                    }
+                if (filesToProcess.length > 0 && accept(filesToProcess[0])) {
+                    window.filesArray = [filesToProcess[0]];
                 }
             } else {
-                // Multiple files mode: append and deduplicate
                 filesToProcess.forEach(file => {
-                    if (isValidFileType(file)) {
-                        const duplicate = window.filesArray.some(f => 
-                            f.name === file.name && 
-                            f.size === file.size && 
-                            f.lastModified === file.lastModified
-                        );
-                        if (!duplicate) {
-                            window.filesArray.push(file);
-                            addedAny = true;
-                        }
-                    } else {
-                        hasInvalid = true;
+                    if (!accept(file)) return;
+                    const duplicate = window.filesArray.some(f =>
+                        f.name === file.name &&
+                        f.size === file.size &&
+                        f.lastModified === file.lastModified
+                    );
+                    if (duplicate) return;
+                    if (window.filesArray.length >= maxFiles) {
+                        problems.push(`Only ${maxFiles} files can be uploaded at a time.`);
+                        return;
                     }
+                    window.filesArray.push(file);
                 });
             }
 
-            if (hasInvalid) {
-                const extList = allowedExtensions.join(", ").toUpperCase();
-                showError(`Some files were skipped. Only the following formats are allowed: ${extList || "All files"}`);
+            if (problems.length) {
+                showError(problems.slice(0, 3).join(" "));
             }
 
-            fileInput.value = ""; // Reset so change triggers again
+            fileInput.value = "";  // reset so re-picking the same file still fires change
             triggerFilesChanged();
         }
 
-        // Event listeners
         if (dropZone) {
             dropZone.addEventListener("dragover", e => {
                 e.preventDefault();
                 dropZone.classList.add("dragover");
             });
 
-            dropZone.addEventListener("dragleave", () => {
-                dropZone.classList.remove("dragover");
-            });
+            dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
 
             dropZone.addEventListener("drop", e => {
                 e.preventDefault();
@@ -184,13 +195,20 @@
             });
 
             // ponytail: guard prevents double-trigger when clicking the <input> inside the drop zone
-            dropZone.addEventListener("click", (e) => {
+            dropZone.addEventListener("click", e => {
                 if (e.target === fileInput) return;
                 fileInput.click();
             });
+
+            dropZone.addEventListener("keydown", e => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    fileInput.click();
+                }
+            });
         }
 
-        fileInput.addEventListener("change", e => {
+        fileInput.addEventListener("change", () => {
             if (fileInput.files && fileInput.files.length > 0) {
                 handleFileSelection(fileInput.files);
             }
@@ -204,11 +222,9 @@
                     return;
                 }
 
-                // Transfer files to input files list
+                // Copy our ordered list back into the real input before it is sent.
                 const dataTransfer = new DataTransfer();
-                window.filesArray.forEach(file => {
-                    dataTransfer.items.add(file);
-                });
+                window.filesArray.forEach(file => dataTransfer.items.add(file));
                 fileInput.files = dataTransfer.files;
             });
         }

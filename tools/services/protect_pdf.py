@@ -1,34 +1,39 @@
-from pypdf import PdfReader, PdfWriter
-import os
-import uuid
-from django.conf import settings
+import pikepdf
+
+from ..uploads import ToolError, new_media_path
+
+MIN_PASSWORD_LENGTH = 4
+
 
 def protect_pdf(file, pwd):
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+    """Encrypt a PDF with AES-256.
 
-    input_name = f"{uuid.uuid4()}.pdf"
-    input_path = os.path.join(settings.MEDIA_ROOT, input_name)
+    Uses pikepdf/qpdf rather than pypdf: pypdf falls back to RC4-128 (broken)
+    unless the extra `cryptography` package is installed, while qpdf ships
+    AES-256 support in the wheel we already depend on.
+    """
+    pwd = (pwd or "").strip()
+    if not pwd:
+        raise ToolError("Please enter a password.")
+    if len(pwd) < MIN_PASSWORD_LENGTH:
+        raise ToolError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters.")
 
+    file.seek(0)
     try:
-        with open(input_path, "wb") as f:
-            for chunk in file.chunks():
-                f.write(chunk)
-        
-        reader = PdfReader(input_path)
-        writer = PdfWriter()
+        pdf = pikepdf.open(file)
+    except pikepdf.PasswordError:
+        raise ToolError(
+            "This PDF is already password-protected. "
+            "Unlock it first if you want to set a new password."
+        ) from None
+    except Exception as exc:
+        raise ToolError(
+            f"'{file.name}' could not be read. It may be corrupt or not a real PDF."
+        ) from exc
 
-        for page in reader.pages:
-            writer.add_page(page)
-        
-        writer.encrypt(pwd)
+    filename, output_path = new_media_path("_protected.pdf")
+    with pdf:
+        # R=6 is the AES-256 revision from the PDF 2.0 spec.
+        pdf.save(output_path, encryption=pikepdf.Encryption(user=pwd, owner=pwd, R=6))
 
-        output_name = f"{uuid.uuid4()}_protected.pdf"
-        output_path = os.path.join(settings.MEDIA_ROOT, output_name)
-
-        with open(output_path, "wb") as f:
-            writer.write(f)
-        
-        return output_name
-    finally:
-        if os.path.exists(input_path):
-            os.remove(input_path)
+    return filename

@@ -3,12 +3,17 @@ FROM python:3.12-slim
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
-# System deps: Poppler (pdf2image), QPDF (pikepdf), Ghostscript (compress),
-# LibreOffice + fonts (DOCX↔PDF conversion)
+# System deps:
+#   qpdf          - pikepdf (protect / unlock)
+#   ghostscript   - compression
+#   libreoffice   - DOCX <-> PDF conversion. The full package (not just
+#                   -writer) is required: the PDF -> DOCX fallback uses the
+#                   writer_pdf_import filter, which ships with libreoffice-draw.
+# poppler-utils is gone: PDF rendering now goes through PyMuPDF, no binary needed.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    poppler-utils \
     qpdf \
     ghostscript \
     libreoffice \
@@ -17,22 +22,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-crosextra-caladea \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python deps before copying source for better layer caching
+# Install Python deps before copying source, for better layer caching.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# collectstatic needs a non-empty SECRET_KEY; the real one is injected at runtime
+# collectstatic needs a non-empty SECRET_KEY; the real one is injected at runtime.
 RUN DJANGO_SECRET_KEY=build-only-placeholder \
     ALLOWED_HOSTS=* \
     DEBUG=false \
     python manage.py collectstatic --noinput
 
-# Pre-create media dir so the volume mount target exists in the image
-RUN mkdir -p /app/media
+# Run as an unprivileged user; media/ is the only writable path needed.
+RUN mkdir -p /app/media \
+    && useradd --system --uid 1000 --home /app pdfix \
+    && chown -R pdfix:pdfix /app/media
+USER pdfix
 
 EXPOSE 8000
 
-# migrate first (idempotent), then serve
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request,os,sys; sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"PORT\",8000)}/healthz', timeout=4).status==200 else 1)"
+
+# --timeout must exceed the conversion budget in tools/services/pdf_to_docx.py,
+# or gunicorn kills the worker mid-job and the user gets a 502 instead of an error.
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --threads 2 --timeout 300 --graceful-timeout 30 --max-requests 200 --max-requests-jitter 50 --access-logfile - --error-logfile -"]

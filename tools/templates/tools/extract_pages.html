@@ -5,11 +5,26 @@
 {% block title %}Extract Pages from PDF Online Free - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
+    <style>
+        #pageCountBanner{
+            display:none;
+            background:#f0fdf4;
+            border:1px solid #bbf7d0;
+            border-radius:6px;
+            padding:8px 14px;
+            max-width:480px;
+            margin:0 auto 12px auto;
+            font-size:13px;
+            color:#166534;
+            text-align:center;
+        }
+        #pagesInput{ min-width:220px; }
+    </style>
 {% endblock %}
 {% block content %}
     <h2>Extract Pages from PDF</h2>
 
-    {% include "tools/components/tool_desc.html" with text="Select and extract specific pages from a PDF document to create a new file containing only the pages you need." %}
+    {% include "tools/components/tool_desc.html" with text="Pick the pages you need and build a new PDF from just those. Enter single pages, ranges, or a mix of both." %}
 
     {% include "tools/components/spinner.html" %}
 
@@ -21,30 +36,35 @@
         <br>
         <div id="previewContainer" class="preview-container"></div>
         <br>
-        <div id="pageCountBanner" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:8px 14px;max-width:480px;margin:0 auto 12px auto;font-size:13px;color:#166534;text-align:center;">
-            📄 Total pages in this PDF: <strong id="totalPagesNum">—</strong>
+        <div id="pageCountBanner">
+            📄 This PDF has <strong id="totalPagesNum">—</strong> pages
         </div>
-        <label>Start Page</label>
-        <input type="number" name="start" id="startPage" min="1" required>
-        <br><br>
-        <label>End Page</label>
-        <input type="number" name="end" id="endPage" min="1" required>
-        <br><br>
+
+        <div class="options">
+            <div class="option">
+                <label for="pagesInput">Pages to extract</label>
+                <input type="text" name="pages" id="pagesInput" placeholder="1-3, 7, 9-12" required>
+                <span class="hint">Ranges, single pages, or <code>all</code>. Order is kept.</span>
+            </div>
+        </div>
+
+        <br>
         <button type="submit">Extract Pages</button>
     </form>
 
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+            integrity="sha512-q+4liFwdPC/bNdhUpZx6aXDx/h77yEQtn4I1slHydcbZK34nLaR3cAeYSJshoxIOq3mjEf7xJE8YWIUHMn+oCQ=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc =
             "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
         const pageCountBanner = document.getElementById("pageCountBanner");
         const totalPagesNum = document.getElementById("totalPagesNum");
-        const startInput = document.getElementById("startPage");
-        const endInput = document.getElementById("endPage");
+        const pagesInput = document.getElementById("pagesInput");
 
         window.onFilesChanged = function(files) {
             window.defaultRenderFiles();
@@ -56,14 +76,10 @@
             reader.onload = async function(e) {
                 try {
                     const pdf = await pdfjsLib.getDocument(new Uint8Array(e.target.result)).promise;
-                    const n = pdf.numPages;
-                    totalPagesNum.textContent = n;
+                    totalPagesNum.textContent = pdf.numPages;
                     pageCountBanner.style.display = "block";
-                    // auto-fill sensible defaults
-                    if (!startInput.value) startInput.value = 1;
-                    if (!endInput.value) endInput.value = n;
-                    endInput.max = n;
-                    startInput.max = n;
+                    pagesInput.placeholder = "1-" + pdf.numPages;
+                    if (!pagesInput.value) pagesInput.value = "1-" + pdf.numPages;
                 } catch (_) {
                     pageCountBanner.style.display = "none";
                 }

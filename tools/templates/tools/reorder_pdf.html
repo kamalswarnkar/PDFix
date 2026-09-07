@@ -7,153 +7,159 @@
     {% include "tools/components/spinner_style.html" %}
     <style>
         #previewContainer{
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+            justify-content:center;
+            margin-top:20px;
         }
 
         .page-card{
-            width: 120px;
-            border: 1px solid #ddd;
-            padding: 5px;
-            border-radius: 6px;
-            background: white;
-            cursor: grab;
+            position:relative;
+            width:120px;
+            border:1px solid #ddd;
+            padding:5px;
+            border-radius:6px;
+            background:white;
+            cursor:grab;
         }
 
-        .page-card canvas{
-            width: 100%;
-            height: auto;
+        .page-card canvas{ width:100%; height:auto; display:block; }
+
+        .page-card .page-number{
+            position:absolute;
+            top:2px;
+            left:2px;
+            background:rgba(31,41,55,0.8);
+            color:white;
+            font-size:11px;
+            border-radius:3px;
+            padding:1px 5px;
         }
 
-        #statusMessage{
-            font-size: 13px;
-            margin-top: 10px;
-            color: #666;
-        }
-
-        #statusMessage.error{
-            color: #c0392b;
-        }
-
-        #serverError{
-            font-size: 13px;
-            color: #c0392b;
-        }
+        #statusMessage{ font-size:13px; margin-top:10px; color:#666; }
+        #statusMessage.error{ color:#c0392b; }
     </style>
 {% endblock %}
 {% block content %}
     <h2>Reorder PDF Pages</h2>
 
-    {% include "tools/components/tool_desc.html" with text="Rearrange the order of pages in your PDF by dragging them into the desired sequence." %}
+    {% include "tools/components/tool_desc.html" with text="Drag the page thumbnails into the order you want, then download the rearranged PDF. Page previews are rendered in your browser - nothing is uploaded until you submit." %}
 
     {% include "tools/components/spinner.html" %}
 
-    <form method="post" enctype="multipart/form-data" id="reorderForm">
+    {% include "tools/components/error_message.html" %}
+
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
         {% csrf_token %}
         {% include "tools/components/uploader.html" with input_name="file" multiple=False accept_types=".pdf" %}
-        {% if error %}
-        <p id="serverError" class="error">{{ error }}</p>
-        {% endif %}
         <br>
         <div id="previewContainer"></div>
         <p id="statusMessage">Upload a PDF, then drag the page previews to reorder them.</p>
-        <br>
         <input type="hidden" name="order" id="orderInput">
-
         <br>
-
         <button type="submit">Reorder Pages</button>
     </form>
 
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+            integrity="sha512-q+4liFwdPC/bNdhUpZx6aXDx/h77yEQtn4I1slHydcbZK34nLaR3cAeYSJshoxIOq3mjEf7xJE8YWIUHMn+oCQ=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js"
+            integrity="sha512-csIng5zcB+XpulRUa+ev1zKo7zRNGpEaVfNB9On1no9KYTEY/rLGAEEpvgdw6nim1WdTuihZY1eqZ31K7/fZjw=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script>
-
         pdfjsLib.GlobalWorkerOptions.workerSrc =
             "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
         const previewContainer = document.getElementById("previewContainer");
         const orderInput = document.getElementById("orderInput");
-        const reorderForm = document.getElementById("reorderForm");
+        const reorderForm = document.getElementById("uploadForm");
         const statusMessage = document.getElementById("statusMessage");
+        const RENDER_TIMEOUT_MS = 45000;
         let sortable = null;
 
-        // ponytail: hook into shared filesArray via onFilesChanged instead of reading
-        // reorderInput.files[0] directly — the shared uploader clears the native input
-        // after each pick, so files[0] would be stale after remove+reselect.
-        window.onFilesChanged = function(files) {
+        function setStatus(text, isError) {
+            statusMessage.textContent = text;
+            statusMessage.classList.toggle("error", !!isError);
+        }
+
+        // ponytail: hook into the shared filesArray via onFilesChanged instead of
+        // reading fileInput.files[0] - the uploader clears the native input after
+        // each pick, so files[0] would be stale after remove + reselect.
+        window.onFilesChanged = async function(files) {
             previewContainer.innerHTML = "";
             orderInput.value = "";
 
             if (files.length === 0) {
-                statusMessage.classList.remove("error");
-                statusMessage.textContent = "Upload a PDF, then drag the page previews to reorder them.";
+                setStatus("Upload a PDF, then drag the page previews to reorder them.");
                 return;
             }
 
-            const file = files[0];
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const typedarray = new Uint8Array(e.target.result);
-                    await renderPDF(typedarray);
-                    statusMessage.classList.remove("error");
-                    statusMessage.textContent = "Drag the page previews to set the new order.";
-                } catch (_) {
-                    previewContainer.innerHTML = "";
-                    orderInput.value = "";
-                    statusMessage.classList.add("error");
-                    statusMessage.textContent = "Unable to load this PDF. Please try a different file.";
-                }
-            };
-            reader.readAsArrayBuffer(file);
+            setStatus("Rendering page previews…");
+            try {
+                // Bounded: if rendering stalls the user must get an error, not
+                // a status line that spins forever with no way forward.
+                await Promise.race([
+                    renderPDF(new Uint8Array(await files[0].arrayBuffer())),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error("render timed out")), RENDER_TIMEOUT_MS)),
+                ]);
+                setStatus("Drag the page previews to set the new order.");
+            } catch (_) {
+                previewContainer.innerHTML = "";
+                orderInput.value = "";
+                setStatus(
+                    "Could not preview this PDF. It may be corrupt, password-protected, or too large.",
+                    true
+                );
+            }
         };
 
         async function renderPDF(data) {
-            previewContainer.innerHTML = "";
             const pdf = await pdfjsLib.getDocument(data).promise;
 
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const viewport = page.getViewport({ scale: 0.3 });
                 const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
-                await page.render({ canvasContext: ctx, viewport }).promise;
+                await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
 
                 const card = document.createElement("div");
                 card.className = "page-card";
                 card.dataset.page = i;
-                card.appendChild(canvas);
+
+                const badge = document.createElement("span");
+                badge.className = "page-number";
+                badge.textContent = i;
+
+                card.append(badge, canvas);
                 previewContainer.appendChild(card);
             }
 
             if (sortable) sortable.destroy();
-            sortable = new Sortable(previewContainer, { animation: 150, onEnd: updateOrder });
+            if (window.Sortable) {
+                sortable = new Sortable(previewContainer, { animation: 150, onEnd: updateOrder });
+            }
             updateOrder();
         }
 
         function updateOrder() {
-            const order = [];
-            document.querySelectorAll(".page-card").forEach(card => order.push(card.dataset.page));
-            orderInput.value = order.join(",");
+            orderInput.value = Array.from(previewContainer.querySelectorAll(".page-card"))
+                .map(card => card.dataset.page)
+                .join(",");
         }
 
         reorderForm.addEventListener("submit", function(e) {
             if (!orderInput.value) {
                 e.preventDefault();
-                statusMessage.classList.add("error");
-                statusMessage.textContent = "Upload a PDF and wait for the page previews before submitting.";
+                setStatus("Upload a PDF and wait for the page previews before submitting.", true);
             }
-        });
-
+        }, true);
     </script>
 {% endblock %}

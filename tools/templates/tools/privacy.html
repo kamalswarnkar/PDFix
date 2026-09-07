@@ -1,39 +1,66 @@
 {% extends "tools/base.html" %}
 {% block title %}Privacy Policy - PDFix{% endblock %}
+{% block meta_description %}How PDFix handles the files you upload: processed on the server, deleted as soon as your download starts, never stored permanently.{% endblock %}
 {% block content %}
     <h2>Privacy Policy</h2>
 
     <p>
-        PDFix provides free online tools for working with PDF files. We respect your privacy and are committed to protecting your data.
+        PDFix provides free online tools for working with PDF files. This page describes
+        exactly what happens to the files you upload.
     </p>
 
-    <h3>File Processing</h3>
+    <h3>File processing</h3>
     <p>
-        Files uploaded to PDFix are processed automatically on the server in order to perform the requested tool operation such as merging, splitting, or converting.
+        Files you upload are processed on our server to perform the operation you asked for —
+        merging, splitting, compressing, converting and so on. We do not read, index, or
+        analyse the contents of your documents for any other purpose.
     </p>
 
-    <h3>File Deletion</h3>
+    <h3>File deletion</h3>
     <p>
-        Uploaded files and generated output files are automatically deleted from our server within <strong>30 minutes</strong> of being created. Files are removed on the next request after they exceed this window — no files are retained beyond 30 minutes.
+        Your uploaded file is deleted as soon as processing finishes, and the generated
+        result file is deleted the moment your download begins. A background sweeper removes
+        anything left behind — for example if a download was interrupted — within
+        <strong>30 minutes</strong>. Nothing is retained beyond that window.
     </p>
 
-
-    <h3>No Permanent Storage</h3>
+    <h3>Passwords</h3>
     <p>
-        PDFix does not permanently store your documents.
+        Passwords entered into the Protect PDF and Unlock PDF tools are used only for that
+        single operation and are never written to disk or logged. PDFix cannot recover a
+        password you have forgotten.
     </p>
 
-    <h3>Cookies</h3>
+    <h3>No permanent storage and no accounts</h3>
     <p>
-        PDFix may use minimal cookies required for functionality such as download handling.
+        PDFix does not store your documents, and there is no signup, so we hold no account
+        details for you.
+    </p>
+
+    <h3>Cookies and analytics</h3>
+    <p>
+        PDFix sets a small number of functional cookies: a security token that protects the
+        upload forms against cross-site request forgery, and a short-lived cookie that tells
+        the page your download has started.
+    </p>
+    <p>
+        We also use Google Analytics to understand which tools are used and to spot pages
+        that are failing. Google Analytics sets its own cookies and receives your IP address
+        and the pages you visit. It never receives your files or their contents. You can
+        block it with any standard browser or extension-level analytics blocker without
+        affecting the tools.
+    </p>
+
+    <h3>Reports and suggestions</h3>
+    <p>
+        If you submit a bug report or a suggestion, the text you type is stored so we can act
+        on it, and a copy is emailed to us. Do not include confidential information in those
+        forms.
     </p>
 
     <h3>Changes</h3>
     <p>
-        This privacy policy may be updated occasionally to reflect improvements to the service.
-    </p>
-
-    <p>
-        If you have questions about this policy, please contact us.
+        This policy may be updated occasionally to reflect changes to the service.
+        If you have questions about it, use the suggestion button in the corner of any page.
     </p>
 {% endblock %}

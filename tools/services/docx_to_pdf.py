@@ -1,95 +1,97 @@
+import logging
 import os
-import uuid
-import subprocess
 import shutil
+import subprocess
+
 from django.conf import settings
+
+from ..uploads import ToolError, save_upload
+
+logger = logging.getLogger(__name__)
 
 
 def _convert_with_word_com(input_path, output_path):
-    """
-    Use win32com to drive Microsoft Word directly from Python.
-    No PowerShell subprocess spawn → much faster conversion.
-    Returns True if the conversion succeeded.
-    """
+    """Drive Microsoft Word through pywin32 - fastest and highest fidelity."""
     try:
-        import win32com.client
         import pythoncom
+        import win32com.client
     except ImportError:
         return False
 
+    word = None
+    doc = None
     try:
         pythoncom.CoInitialize()
         word = win32com.client.Dispatch("Word.Application")
         word.Visible = False
-        word.DisplayAlerts = 0  # wdAlertsNone — suppress all dialogs
-
-        doc = word.Documents.Open(os.path.abspath(input_path))
-        # SaveAs2 format 17 = wdFormatPDF
-        doc.SaveAs2(os.path.abspath(output_path), FileFormat=17)
-        doc.Close(0)  # wdDoNotSaveChanges
-        word.Quit()
-
+        word.DisplayAlerts = 0
+        doc = word.Documents.Open(os.path.abspath(input_path), ReadOnly=True)
+        doc.SaveAs2(os.path.abspath(output_path), FileFormat=17)  # wdFormatPDF
         return os.path.exists(output_path)
-    except Exception:
-        try:
-            word.Quit()
-        except Exception:
-            pass
+    except Exception as exc:
+        logger.info("Word COM DOCX->PDF failed: %s", exc)
         return False
     finally:
-        pythoncom.CoUninitialize()
+        for close in (lambda: doc and doc.Close(0), lambda: word and word.Quit(),
+                      pythoncom.CoUninitialize):
+            try:
+                close()
+            except Exception:
+                pass
+
+
+def _convert_with_libreoffice(input_path, output_dir, output_path, uid):
+    """LibreOffice headless DOCX -> PDF, with a per-request user profile.
+
+    The previous version shared one profile directory in the system temp dir,
+    so two simultaneous conversions collided on LibreOffice's profile lock.
+    """
+    profile_dir = os.path.join(output_dir, f"lo_profile_{uid}")
+    os.makedirs(profile_dir, exist_ok=True)
+
+    try:
+        subprocess.run(
+            [
+                "soffice",
+                "--headless",
+                "--norestore",
+                "--nofirststartwizard",
+                "--convert-to", "pdf:writer_pdf_Export",
+                f"-env:UserInstallation=file:///{profile_dir.replace(os.sep, '/')}",
+                "--outdir", output_dir,
+                input_path,
+            ],
+            check=True,
+            timeout=settings.CONVERT_TIMEOUT_SECONDS,
+            capture_output=True,
+        )
+    except Exception as exc:
+        logger.info("LibreOffice DOCX->PDF failed: %s", exc)
+
+    return os.path.exists(output_path)
 
 
 def docx_to_pdf(file):
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-
-    uid = str(uuid.uuid4())
-    input_name = f"{uid}.docx"
-    input_path = os.path.join(settings.MEDIA_ROOT, input_name)
+    """Convert a Word document to PDF using Word if present, else LibreOffice."""
+    input_path = save_upload(file, ".docx")
+    uid = os.path.splitext(os.path.basename(input_path))[0]
+    output_name = f"{uid}.pdf"
+    output_path = os.path.join(settings.MEDIA_ROOT, output_name)
 
     try:
-        with open(input_path, "wb+") as f:
-            for chunk in file.chunks():
-                f.write(chunk)
+        if os.name == "nt" and _convert_with_word_com(input_path, output_path):
+            return output_name
 
-        output_name = f"{uid}.pdf"
-        output_path = os.path.join(settings.MEDIA_ROOT, output_name)
+        if _convert_with_libreoffice(input_path, settings.MEDIA_ROOT, output_path, uid):
+            return output_name
 
-        # ── Tier 1: Direct Python COM via pywin32 (Windows only) ──────────────
-        if os.name == "nt":
-            if _convert_with_word_com(input_path, output_path):
-                return output_name
-
-        # ── Tier 2: LibreOffice headless (cross-platform) ──────────────────
-        import tempfile
-        profile_dir = os.path.join(tempfile.gettempdir(), "lo_profile")
-        os.makedirs(profile_dir, exist_ok=True)
-
-        try:
-            subprocess.run(
-                [
-                    "soffice",
-                    "--headless",
-                    "--norestore",
-                    "--nofirststartwizard",
-                    "--convert-to", "pdf:writer_pdf_Export",
-                    f"-env:UserInstallation=file:///{profile_dir.replace(os.sep, '/')}",
-                    "--outdir", settings.MEDIA_ROOT,
-                    input_path,
-                ],
-                check=True,
-                timeout=120,
-            )
-        except Exception:
-            pass
-
-        if not os.path.exists(output_path):
-            raise RuntimeError(
-                "Conversion failed. Microsoft Word or LibreOffice is required to convert DOCX files."
-            )
-
-        return output_name
+        logger.warning("docx_to_pdf: no engine produced output for %s", file.name)
+        raise ToolError(
+            "This document could not be converted. It may be corrupt, "
+            "password-protected, or use features the converter does not support."
+        )
     finally:
         if os.path.exists(input_path):
             os.remove(input_path)
-
+        # LibreOffice occasionally leaves a stray profile behind after a kill.
+        shutil.rmtree(os.path.join(settings.MEDIA_ROOT, f"lo_profile_{uid}"), ignore_errors=True)

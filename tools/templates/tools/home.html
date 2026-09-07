@@ -3,26 +3,35 @@
     Free online PDF tools to merge, split, compress, convert and manage PDF files quickly and securely. No signup required.
 {% endblock %}
 {% block title %}PDFix - Free Online PDF Tools | Merge, Split, Compress & Convert PDFs{% endblock %}
+{% block head %}
+    <style>
+        .tool-card strong{ display:block; font-size:15px; margin-bottom:4px; }
+        .tool-card span{ font-size:12px; color:#6b7280; line-height:1.4; }
+    </style>
+{% endblock %}
 {% block content %}
     <h1>Free Online PDF Tools</h1>
 
     <p>
-        Merge, split, compress, convert and edit PDF files easily.
+        Merge, split, compress, convert and edit PDF files in your browser.
+        No signup, no watermarks, and your files are deleted as soon as they are downloaded.
     </p>
 
     <div class="tools-grid">
-        <a class="tool-card" href="/merge-pdf/">📄 Merge PDF</a>
-        <a class="tool-card" href="/split-pdf/">✂ Split PDF</a>
-        <a class="tool-card" href="/compress-pdf/">🗜 Compress PDF</a>
-        <a class="tool-card" href="/compress-pdf-100kb/">📉 Compress to 100KB</a>
-        <a class="tool-card" href="/extract-pages/">📑 Extract Pages</a>
-        <a class="tool-card" href="/pdf-to-image/">📷 PDF to Image</a>
-        <a class="tool-card" href="/image-to-pdf/">🖼 Image to PDF</a>
-        <a class="tool-card" href="/rotate-pdf/">🔁 Rotate PDF</a>
-        <a class="tool-card" href="/protect-pdf/">🔒 Protect PDF</a>
-        <a class="tool-card" href="/unlock-pdf/">🔓 Unlock PDF</a>
-        <a class="tool-card" href="/reorder-pdf/">📑 Reorder Pages</a>
-        <a class="tool-card" href="/docx-to-pdf/">📝 DOCX to PDF</a>
-        <a class="tool-card" href="/pdf-to-docx/">📄 PDF to DOCX</a>
+        <a class="tool-card" href="{% url 'merge_pdf' %}"><strong>📄 Merge PDF</strong><span>Combine several PDFs into one</span></a>
+        <a class="tool-card" href="{% url 'split_pdf' %}"><strong>✂ Split PDF</strong><span>One file per page, in a zip</span></a>
+        <a class="tool-card" href="{% url 'compress_pdf' %}"><strong>🗜 Compress PDF</strong><span>Shrink the file, keep the quality</span></a>
+        <a class="tool-card" href="{% url 'compress_100kb' %}"><strong>📉 Compress to 100KB</strong><span>Hit a strict upload limit</span></a>
+        <a class="tool-card" href="{% url 'extract_pages' %}"><strong>📑 Extract Pages</strong><span>Pull out pages like 1-3, 7</span></a>
+        <a class="tool-card" href="{% url 'pdf_to_image' %}"><strong>📷 PDF to Image</strong><span>Every page as PNG or JPG</span></a>
+        <a class="tool-card" href="{% url 'image_to_pdf' %}"><strong>🖼 Image to PDF</strong><span>Photos and scans into one PDF</span></a>
+        <a class="tool-card" href="{% url 'rotate_pdf' %}"><strong>🔁 Rotate PDF</strong><span>Fix sideways or upside-down pages</span></a>
+        <a class="tool-card" href="{% url 'protect_pdf' %}"><strong>🔒 Protect PDF</strong><span>Add an AES-256 password</span></a>
+        <a class="tool-card" href="{% url 'unlock_pdf' %}"><strong>🔓 Unlock PDF</strong><span>Remove a password you know</span></a>
+        <a class="tool-card" href="{% url 'reorder_pdf' %}"><strong>📑 Reorder Pages</strong><span>Drag pages into a new order</span></a>
+        <a class="tool-card" href="{% url 'docx_to_pdf' %}"><strong>📝 DOCX to PDF</strong><span>Word documents into PDF</span></a>
+        <a class="tool-card" href="{% url 'pdf_to_docx' %}"><strong>📄 PDF to DOCX</strong><span>Editable Word from a PDF</span></a>
     </div>
+
+    {% include "tools/components/faq.html" %}
 {% endblock %}

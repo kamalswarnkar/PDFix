@@ -10,18 +10,18 @@ PDFix includes production-ready document processing utilities and feedback chann
 
 *   **Merge PDF**: Combine multiple PDF files into one. Supports custom sorting and page reordering via drag-and-drop.
 *   **Split PDF**: Extract every page of a PDF into separate files, compiled into a single ZIP archive.
-*   **Compress PDF**: Reduce file size using optimized Ghostscript parameters.
-*   **Compress to Smallest Size**: Automatically run multiple compression passes (adjusting DPI, JPEG quality, font compression) targeting a highly-compressed file (~100 KB) while ensuring quality and readability are preserved.
-*   **Extract Pages**: Pull out a specific, validated page range (Start to End) to create a new PDF.
-*   **Image to PDF**: Convert a sequence of JPG/PNG/WebP images into a single, uniform A4-sized PDF document. Supports custom drag-and-drop ordering.
-*   **PDF to Image**: Convert pages of a PDF into high-quality PNG images, zipped for download.
+*   **Compress PDF**: Reduce file size with Ghostscript at three quality levels (smallest / balanced / best). If compression cannot beat the original, the original is returned rather than a larger file.
+*   **Compress to a Target Size**: Runs progressively stronger passes (DPI, JPEG quality, font compression) until the file meets a 100/200/500 KB target, returning the smallest result achieved if the target is unreachable.
+*   **Extract Pages**: Pull out any selection - single pages, ranges, open-ended ranges or `all` (e.g. `1-3, 7, 9-`) - preserving the order you asked for.
+*   **Image to PDF**: Combine JPG/PNG/WebP images into one PDF at 150 DPI, with EXIF rotation honoured, transparency flattened to white, and a choice of A4 pages (auto-orienting to landscape) or pages fitted to the image. Drag to reorder.
+*   **PDF to Image**: Render every page to PNG or JPG at 72/150/300 DPI, zipped for download, with entries named so they sort in page order.
 *   **PDF to DOCX**: Convert PDFs to editable Word documents (leveraging Word COM on Windows or LibreOffice/pdf2docx as cross-platform fallbacks).
 *   **DOCX to PDF**: Convert editable Word documents into professional PDFs with high layout fidelity.
 *   **Rotate PDF**: Rotate pages clockwise or counterclockwise with a real-time rotation preview of the first page.
-*   **Protect PDF**: Add high-strength password encryption to secure your files.
-*   **Unlock PDF**: Remove password restrictions from protected documents.
+*   **Protect PDF**: Encrypt with **AES-256** (via qpdf), with a confirm-password field so a typo cannot lock a file with a password nobody knows.
+*   **Unlock PDF**: Remove password protection, distinguishing a wrong password from a file that was never encrypted.
 *   **Reorder PDF Pages**: Drag-and-drop visual page preview grid to completely rearrange a document's page structure.
-*   **User Feedback & Suggestions**: Floating quick-action widgets (🐛 Bug Report / 💡 Feature Suggestion) allowing users to submit forms directly, persisting data in the SQLite database and triggering instant email notifications to the admin.
+*   **User Feedback & Suggestions**: Floating widgets (🐛 Bug Report / 💡 Feature Suggestion) that persist to the database and notify the admin through the Gmail API, rate-limited per IP. A mail failure never loses a submission.
 
 ---
 
@@ -40,11 +40,11 @@ PDFix includes production-ready document processing utilities and feedback chann
 ## 💻 Tech Stack
 
 *   **Backend**: Django 6.x (Python)
-*   **Database**: SQLite (built-in, tracking feedback and suggestions)
-*   **PDF Libraries**: `pypdf`, `pikepdf`, `pdf2image`, `pdf2docx`, `Pillow`
-*   **System Binaries**: Ghostscript, LibreOffice (soffice), Poppler
+*   **Database**: PostgreSQL via `DATABASE_URL` in production, SQLite locally
+*   **PDF Libraries**: `pypdf`, `pikepdf` (qpdf), `PyMuPDF`, `pdf2docx`, `Pillow`
+*   **System Binaries**: Ghostscript (compression), LibreOffice/`soffice` (DOCX conversion). Poppler is no longer required - PDF rendering uses PyMuPDF.
 *   **Frontend**: HTML5, Vanilla JavaScript, CSS Grid/Flexbox
-*   **Client Libraries**: PDF.js, SortableJS (via CDN)
+*   **Client Libraries**: PDF.js and SortableJS, pinned to exact versions with Subresource Integrity hashes
 *   **Asset Storage**: Auto-cleaned `media/` directory (UUID-based paths)
 
 ---
@@ -76,12 +76,14 @@ Some advanced tools require system-level executables:
     *   *Linux/macOS*: Install via package manager (`apt-get install ghostscript` or `brew install ghostscript`).
 *   **LibreOffice** (Required for DOCX to PDF / PDF to DOCX):
     *   Ensure the `soffice` executable is added to your environment `PATH`.
-*   **Poppler** (Required for PDF to Image):
-    *   Ensure Poppler binaries are installed and accessible on `PATH`.
+
+Poppler is **not** required: PDF-to-image rendering happens in-process via PyMuPDF.
 
 #### 3. Database & App Initialization
 
-1. Create a `.env` file in the project root containing your configurations (see `.env.example` as a template).
+1. Copy `.env.example` to `.env` and fill it in. `settings.py` loads it automatically;
+   real environment variables always take precedence.
+   `DJANGO_SECRET_KEY` is **required** unless `DEBUG=true` - the app refuses to start without it.
 2. Run database migrations:
    ```bash
    python manage.py migrate
@@ -93,24 +95,66 @@ Some advanced tools require system-level executables:
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your web browser.
 
+#### 4. Run the tests
+
+```bash
+python manage.py test tools
+```
+
+53 tests covering upload validation, page-range parsing, and each tool's happy and
+failure paths. Ghostscript and LibreOffice are not needed to run them.
+
+#### 5. Check the deployment configuration
+
+```bash
+python manage.py check --deploy
+```
+
+#### 6. Set up email (optional)
+
+Notifications go out through the **Gmail API over HTTPS**, not SMTP - hosts like
+Render block outbound port 587, which is why the API transport exists. Run this
+once and paste the three values it prints into `.env` and your host's environment:
+
+```bash
+python manage.py gmail_auth --client-secret-file path/to/client_secret_*.json
+```
+
+Run it with no arguments to see how to create the OAuth client. It accepts both
+Desktop and Web application clients; a Web client must have a loopback redirect
+URI registered, and that port has to be free while the command runs. Then verify:
+
+```bash
+python manage.py sendtestemail you@example.com
+```
+
+Gmail SMTP still works as a fallback if you prefer it - set `EMAIL_HOST_USER`
+and an App Password in `EMAIL_HOST_PASSWORD` and leave the `GMAIL_*` values
+empty. With neither configured, mail is printed to the console and submissions
+are still saved to the database.
+
 ---
 
 ### Docker Deployment
 
-PDFix can be completely dockerized for a portable, unified setup. The provided `Dockerfile` compiles all required system dependencies (Ghostscript, LibreOffice, Poppler, and fonts) and packages the application.
+The provided `Dockerfile` installs the required system dependencies (Ghostscript, LibreOffice, fonts), runs `collectstatic`, drops to an unprivileged user, and wires `/healthz` up as the container health check.
 
 #### 1. Set Up Environment Variables
 Copy `.env.example` to `.env` in the root folder and configure:
 ```env
-DJANGO_SECRET_KEY=your-production-secret-key
-ALLOWED_HOSTS=localhost,127.0.0.1
+DJANGO_SECRET_KEY=your-production-secret-key   # required, app will not boot without it
+ALLOWED_HOSTS=your-domain.com
 DEBUG=false
 
-# Optional Gmail SMTP config for email alerts:
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-gmail-app-password
+# Email alerts via the Gmail API over HTTPS. Get these with:
+#   python manage.py gmail_auth --client-id XXX --client-secret YYY
+GMAIL_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GMAIL_CLIENT_SECRET=your-client-secret
+GMAIL_REFRESH_TOKEN=your-refresh-token
 FEEDBACK_EMAIL=kamalswarnkar0111@gmail.com
 ```
+
+See `.env.example` for the full list, including upload limits and conversion timeouts.
 
 #### 2. Run with Docker Compose
 Run the following command to build the image and launch the application container:
@@ -141,9 +185,12 @@ docker-compose down
 PDFix/
 ├── config/                  # Django project settings
 │   ├── settings.py          # Environment configuration
+│   ├── storage.py           # Non-strict manifest static storage
 │   └── urls.py              # App routing
 ├── tools/                   # Core application
 │   ├── models.py            # Feedback & Suggestion database models
+│   ├── uploads.py           # Shared upload validation + media helpers
+│   ├── tests.py             # Test suite
 │   ├── services/            # Isolated file processing services
 │   │   ├── compress_pdf.py
 │   │   ├── docx_to_pdf.py
@@ -169,14 +216,26 @@ PDFix/
 
 Uploaded and generated files are automatically isolated in `media/` using unique UUID prefixes to prevent filename collisions. To keep the server storage clean, a lightweight cleanup module runs automatically on every tool request:
 
-*   Deletes temporary and output files older than 30 minutes.
-*   Runs safely in the request cycle, requiring no external cron/scheduler configuration.
+*   Result files are unlinked the moment the download response is built (on POSIX), so
+    nothing lingers in normal operation.
+*   A sweeper removes anything older than `MEDIA_RETENTION_SECONDS` (default 30 minutes) on
+    the next upload, covering interrupted downloads and killed workers.
+*   Runs inside the request cycle, so no cron or scheduler is needed.
 
 ---
 
 ## 🔒 Security & Privacy
 
-*   **Stateless Operations**: No uploaded documents are ever indexed, cataloged, or saved in database models.
-*   **Automated Purging**: Media files are deleted automatically after 30 minutes, or instantly where execution blocks allow.
-*   **Local Processing Fallbacks**: Features like Windows COM automation bypass external network calls entirely.
+*   **Validated uploads**: Every upload is checked server-side for extension, size
+    (`MAX_UPLOAD_MB`, default 50) and magic bytes before any library or subprocess touches it,
+    so a renamed executable never reaches Ghostscript or LibreOffice.
+*   **AES-256 encryption**: Protect PDF uses qpdf's AES-256 rather than pypdf's RC4-128 default.
+*   **No leaked internals**: Unexpected errors are logged server-side and shown to the user as a
+    generic message; exception text and server paths are never rendered into the page.
+*   **Hardened headers**: HSTS, HTTPS redirect, secure/HttpOnly cookies, `nosniff`,
+    `X-Frame-Options: DENY` and a same-origin referrer policy are all active when `DEBUG=false`.
+*   **Rate limiting**: The feedback and suggestion endpoints are throttled per IP.
+*   **Stateless operations**: No uploaded document is ever indexed, catalogued, or written to a
+    database model.
+*   **Local processing**: Conversions run on our own server; no document is sent to a third party.
 

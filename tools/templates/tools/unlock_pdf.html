@@ -5,54 +5,11 @@
 {% block title %}Unlock PDF Online Free | Remove PDF Password - PDFix{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
-    <style>
-        .password-field{
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:8px;
-            margin-top:10px;
-        }
-
-        .password-field input{
-            padding:10px 12px;
-            min-width:260px;
-        }
-
-        .toggle-password{
-            border:2px solid #d1d5db;
-            background:#f3f4f6;
-            border-radius:6px;
-            width:42px;
-            height:42px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            cursor:pointer;
-            transition:background 0.15s, border-color 0.15s;
-        }
-
-        .toggle-password:hover{
-            background:#e5e7eb;
-            border-color:#9ca3af;
-        }
-
-        .toggle-password.active{
-            border-color:#dc2626;
-            background:#fee2e2;
-            color:#dc2626;
-        }
-
-        .toggle-password span{
-            font-size:20px;
-            line-height:1;
-        }
-    </style>
 {% endblock %}
 {% block content %}
     <h2>Remove Password from PDF</h2>
 
-    {% include "tools/components/tool_desc.html" with text="Remove password protection from a PDF file if you know the correct password." %}
+    {% include "tools/components/tool_desc.html" with text="Remove password protection from a PDF file, so long as you know the correct password." %}
 
     {% include "tools/components/spinner.html" %}
 
@@ -63,44 +20,14 @@
         {% include "tools/components/uploader.html" with input_name="file" multiple=False accept_types=".pdf" %}
         <br>
         <div id="previewContainer" class="preview-container"></div>
+
+        {% include "tools/components/password_field.html" with field_name="pwd" hint="PDFix cannot crack or bypass a password you do not know." %}
+
         <br>
-        <div class="password-field">
-            <input type="password" id="passwordInput" name="pwd" placeholder="Enter password" required>
-            <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">
-                <span id="eyeIcon" style="display:flex;align-items:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                </span>
-            </button>
-        </div>
-        <br><br>
         <button type="submit">Unlock</button>
     </form>
 
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
-    <script>
-        const passwordInput = document.getElementById("passwordInput");
-        const togglePassword = document.getElementById("togglePassword");
-        const eyeIcon = document.getElementById("eyeIcon");
-
-        const eyeOpenSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
-        const eyeClosedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`;
-
-        togglePassword.addEventListener("click", function(){
-            const isHidden = passwordInput.type === "password";
-
-            passwordInput.type = isHidden ? "text" : "password";
-            
-            if(isHidden){
-                togglePassword.classList.add("active");
-                eyeIcon.innerHTML = eyeClosedSvg;
-            }else{
-                togglePassword.classList.remove("active");
-                eyeIcon.innerHTML = eyeOpenSvg;
-            }
-
-            togglePassword.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
-        });
-    </script>
 {% endblock %}
