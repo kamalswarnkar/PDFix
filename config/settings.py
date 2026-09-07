@@ -333,5 +333,7 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": os.environ.get("LOG_LEVEL", "INFO")},
     "loggers": {
         "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        # Logs "C++ to Python logger bridge initialized" on every worker boot.
+        "pikepdf": {"level": "WARNING"},
     },
 }
