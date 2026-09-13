@@ -58,7 +58,7 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
 
         ok = _CallbackHandler.code is not None
         body = (
-            "<h2>PDFix is authorised.</h2><p>You can close this tab and go back "
+            "<h2>tryPDF! is authorised.</h2><p>You can close this tab and go back "
             "to the terminal.</p>" if ok else
             f"<h2>Authorisation failed</h2><p>{_CallbackHandler.error or 'no code returned'}</p>"
         )
@@ -174,7 +174,7 @@ class Command(BaseCommand):
         refresh_token = tokens.get("refresh_token")
         if not refresh_token:
             raise CommandError(
-                "Google did not return a refresh token. Revoke PDFix at "
+                "Google did not return a refresh token. Revoke tryPDF! at "
                 "https://myaccount.google.com/permissions and run this again."
             )
 

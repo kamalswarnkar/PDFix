@@ -1,15 +1,15 @@
 {% extends "tools/base.html" %}
 {% block meta_description %}
-    Add AES-256 password protection to your PDF file and prevent unauthorized access using PDFix secure PDF protection tool.
+    Add AES-256 password protection to your PDF file and prevent unauthorized access using tryPDF! secure PDF protection tool.
 {% endblock %}
-{% block title %}Password Protect PDF Online Free - PDFix{% endblock %}
+{% block title %}Password Protect PDF Online Free - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
     <h2>Password Protect PDF</h2>
 
-    {% include "tools/components/tool_desc.html" with text="Add a password to your PDF so it cannot be opened without it. PDFix encrypts with AES-256, the strongest algorithm the PDF standard supports." %}
+    {% include "tools/components/tool_desc.html" with text="Add a password to your PDF so it cannot be opened without it. tryPDF! encrypts with AES-256, the strongest algorithm the PDF standard supports." %}
 
     {% include "tools/components/spinner.html" %}
 
@@ -21,7 +21,7 @@
         <br>
         <div id="previewContainer" class="preview-container"></div>
 
-        {% include "tools/components/password_field.html" with field_name="pwd" confirm=True hint="At least 4 characters. Keep it somewhere safe — PDFix cannot recover a lost password." %}
+        {% include "tools/components/password_field.html" with field_name="pwd" confirm=True hint="At least 4 characters. Keep it somewhere safe — tryPDF! cannot recover a lost password." %}
 
         <br>
         <button type="submit">Protect</button>

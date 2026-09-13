@@ -308,7 +308,7 @@ def _send_email(subject, message):
     """
     recipient = getattr(settings, "FEEDBACK_EMAIL", "")
     if not recipient:
-        logger.warning("PDFix email: FEEDBACK_EMAIL not set, skipping notification")
+        logger.warning("tryPDF! email: FEEDBACK_EMAIL not set, skipping notification")
         return
 
     try:
@@ -319,12 +319,12 @@ def _send_email(subject, message):
             [recipient],
             fail_silently=False,
         )
-        logger.info("PDFix email: sent %r to %s", subject, recipient)
+        logger.info("tryPDF! email: sent %r to %s", subject, recipient)
     except Exception:
         # Common causes: an account password used instead of a Gmail App
         # Password, 2-Step Verification off, or the host blocking outbound
         # port 587. The full exception goes to the platform log.
-        logger.exception("PDFix email: SMTP send failed")
+        logger.exception("tryPDF! email: SMTP send failed")
 
 
 def _queue_email(subject, body):
@@ -368,8 +368,8 @@ def submit_feedback(request):
         logger.exception("submit_feedback: DB save failed")
 
     _queue_email(
-        f"[PDFix Bug] {feature}",
-        f"Bug Report - PDFix\n{'=' * 40}\nFeature : {feature}\nIssue   : {issue}\n",
+        f"[tryPDF! Bug] {feature}",
+        f"Bug Report - tryPDF!\n{'=' * 40}\nFeature : {feature}\nIssue   : {issue}\n",
     )
     return JsonResponse({"ok": True})
 
@@ -393,7 +393,7 @@ def submit_suggestion(request):
         logger.exception("submit_suggestion: DB save failed")
 
     _queue_email(
-        "[PDFix Suggestion]",
-        f"Suggestion - PDFix\n{'=' * 40}\nDescription : {description}\nWhy needed  : {why_needed}\n",
+        "[tryPDF! Suggestion]",
+        f"Suggestion - tryPDF!\n{'=' * 40}\nDescription : {description}\nWhy needed  : {why_needed}\n",
     )
     return JsonResponse({"ok": True})

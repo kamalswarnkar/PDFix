@@ -13,6 +13,8 @@ staticfiles/
 *.ctl
 .agents/
 deployment_guide.md
-"Major IssuesChallenges with PDFix.txt"
+Major Issues*.txt
 db/
 Samples/
+Claude outputs/
+council-*

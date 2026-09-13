@@ -23,6 +23,6 @@ staticfiles/
 # .env.example is intentionally kept (it has no secrets)
 
 # Docs / dev-only files
-"Major IssuesChallenges with PDFix.txt"
+Major Issues*.txt
 deployment_guide.md
 db/

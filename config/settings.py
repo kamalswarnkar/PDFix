@@ -1,5 +1,5 @@
 """
-Django settings for PDFix.
+Django settings for tryPDF!.
 
 Every deployment knob is an environment variable. A local .env file (if present)
 is loaded first, so `python manage.py runserver` behaves like production.
@@ -308,7 +308,7 @@ else:
 # Gmail rejects or rewrites a From address that is not the authenticated
 # account, so default to it rather than a made-up noreply@ address.
 DEFAULT_FROM_EMAIL = (
-    os.environ.get("DEFAULT_FROM_EMAIL") or EMAIL_HOST_USER or "noreply@pdfix.app"
+    os.environ.get("DEFAULT_FROM_EMAIL") or EMAIL_HOST_USER or "noreply@trypdf.in"
 )
 
 FEEDBACK_EMAIL = os.environ.get("FEEDBACK_EMAIL", "kamalswarnkar0111@gmail.com")

@@ -1,8 +1,8 @@
 {% extends "tools/base.html" %}
 {% block meta_description %}
-    Remove password protection from a PDF file if you know the password using PDFix free online PDF unlock tool.
+    Remove password protection from a PDF file if you know the password using tryPDF! free online PDF unlock tool.
 {% endblock %}
-{% block title %}Unlock PDF Online Free | Remove PDF Password - PDFix{% endblock %}
+{% block title %}Unlock PDF Online Free | Remove PDF Password - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
@@ -21,7 +21,7 @@
         <br>
         <div id="previewContainer" class="preview-container"></div>
 
-        {% include "tools/components/password_field.html" with field_name="pwd" hint="PDFix cannot crack or bypass a password you do not know." %}
+        {% include "tools/components/password_field.html" with field_name="pwd" hint="tryPDF! cannot crack or bypass a password you do not know." %}
 
         <br>
         <button type="submit">Unlock</button>

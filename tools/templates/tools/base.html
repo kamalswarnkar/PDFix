@@ -14,7 +14,7 @@
         gtag('config', 'G-C2B0CGLHDZ');
     </script>
 
-    <title>{% block title %}PDFix - Free Online PDF Tools{% endblock %}</title>
+    <title>{% block title %}tryPDF! - Free Online PDF Tools{% endblock %}</title>
 
     <meta name="description" content="{% block meta_description %}Free online PDF tools to merge, split, compress, convert and manage PDF files quickly and securely.{% endblock %}">
     <meta name="keywords" content="pdf tools, merge pdf, split pdf, compress pdf, pdf converter, pdf to docx, docx to pdf">
@@ -27,10 +27,10 @@
             "mainEntity":[
                 {
                     "@type":"Question",
-                    "name":"Is PDFix free to use?",
+                    "name":"Is tryPDF! free to use?",
                     "acceptedAnswer":{
                         "@type":"Answer",
-                        "text":"Yes. All PDFix tools are completely free to use online with no signup required."
+                        "text":"Yes. All tryPDF! tools are completely free to use online with no signup required."
                     }
                 },
                 {
@@ -54,7 +54,7 @@
                     "name":"Do these tools work on mobile?",
                     "acceptedAnswer":{
                         "@type":"Answer",
-                        "text":"Yes. PDFix tools work on desktop, tablet, and mobile browsers."
+                        "text":"Yes. tryPDF! tools work on desktop, tablet, and mobile browsers."
                     }
                 }
             ]
@@ -97,12 +97,17 @@
         }
 
         .logo img{
-            height:26px;
+            height:56px;
             width:auto;
         }
 
         .logo span{
             font-weight: 700;
+        }
+
+        /* "try" in a deepened logo yellow, readable on white */
+        .logo .try{
+            color:#E0A800;
         }
 
         .container{
@@ -571,8 +576,8 @@
     <header>
         <div class="header-container">
             <a class="logo" href="/">
-                <img src="{% static 'logo.png' %}" alt="PDFix logo">
-                <span>PDFix</span>
+                <img src="{% static 'logo.png' %}" alt="tryPDF! logo">
+                <span><span class="try">try</span>PDF!</span>
             </a>
         </div>
     </header>
@@ -582,7 +587,7 @@
     </div>
 
     <footer>
-        PDFix — Free Online PDF Tools<br>
+        tryPDF! — Free Online PDF Tools<br>
         <a href="{% url 'about' %}">About</a> |
         <a href="{% url 'privacy' %}">Privacy Policy</a> |
         <a href="{% url 'terms' %}">Terms of Service</a>
@@ -633,7 +638,7 @@
             <div id="fbStep2" class="fb-thankyou" style="display:none;">
                 <p style="font-size:28px; margin-bottom:6px;">✅</p>
                 <h3 style="margin-bottom:6px;">Thank you!</h3>
-                <p>Your bug report has been submitted. We appreciate you helping us improve PDFix.</p>
+                <p>Your bug report has been submitted. We appreciate you helping us improve tryPDF!.</p>
                 <button class="fb-submit" id="fbDoneBtn">Done</button>
             </div>
         </div>
@@ -662,7 +667,7 @@
             <div id="sgStep2" class="fb-thankyou" style="display:none;">
                 <p style="font-size:28px; margin-bottom:6px;">✅</p>
                 <h3 style="margin-bottom:6px;">Thank you!</h3>
-                <p>Your suggestion has been recorded. We love hearing ideas to make PDFix better!</p>
+                <p>Your suggestion has been recorded. We love hearing ideas to make tryPDF! better!</p>
                 <button class="fb-submit" id="sgDoneBtn">Done</button>
             </div>
         </div>
@@ -674,7 +679,7 @@
             try {
                 return document.getElementById('csrfForm').querySelector('[name=csrfmiddlewaretoken]').value;
             } catch(e) {
-                console.error('PDFix: CSRF token not found', e);
+                console.error('tryPDF!: CSRF token not found', e);
                 return '';
             }
         }
@@ -693,7 +698,7 @@
                     body: data
                 });
             } catch (networkErr) {
-                console.error('PDFix: network error on', url, networkErr);
+                console.error('tryPDF!: network error on', url, networkErr);
                 showErr(errEl, 'Network error — check your connection and try again.');
                 return false;
             }
@@ -702,7 +707,7 @@
             try {
                 json = await response.json();
             } catch (parseErr) {
-                console.error('PDFix: non-JSON response', response.status, response.statusText, parseErr);
+                console.error('tryPDF!: non-JSON response', response.status, response.statusText, parseErr);
                 showErr(errEl, 'Unable to send your report. Please try again in a few minutes.');
                 return false;
             }

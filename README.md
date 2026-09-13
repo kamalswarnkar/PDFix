@@ -1,12 +1,12 @@
-# PDFix 🛠️📄
+# tryPDF! 🛠️📄
 
-PDFix is a lightweight, responsive, and robust Django-based web application providing a comprehensive suite of offline-first PDF workflows. It is built as a server-rendered toolkit optimized for speed, reliability, and security, allowing users to process sensitive documents entirely within a clean, modern interface.
+tryPDF! is a lightweight, responsive, and robust Django-based web application providing a comprehensive suite of offline-first PDF workflows. It is built as a server-rendered toolkit optimized for speed, reliability, and security, allowing users to process sensitive documents entirely within a clean, modern interface.
 
 ---
 
 ## ✨ Features & Tools
 
-PDFix includes production-ready document processing utilities and feedback channels:
+tryPDF! includes production-ready document processing utilities and feedback channels:
 
 *   **Merge PDF**: Combine multiple PDF files into one. Supports custom sorting and page reordering via drag-and-drop.
 *   **Split PDF**: Extract every page of a PDF into separate files, compiled into a single ZIP archive.
@@ -57,7 +57,7 @@ PDFix includes production-ready document processing utilities and feedback chann
 
 ```bash
 git clone <repository-url>
-cd PDFix
+cd trypdf
 
 # Create a virtual environment
 python -m venv penv
@@ -164,7 +164,7 @@ docker-compose up --build -d
 This command:
 *   Builds the image with all Python package dependencies and system binaries cached.
 *   Runs Django database migrations inside the container automatically.
-*   Mounts a persistent Docker volume `pdfix_media` to preserve uploads/downloads inside `/app/media`.
+*   Mounts a persistent Docker volume `trypdf_media` to preserve uploads/downloads inside `/app/media`.
 *   Serves the application on port `8000`.
 
 To view container logs or status:
@@ -182,7 +182,7 @@ docker-compose down
 ## 📂 Project Architecture
 
 ```text
-PDFix/
+trypdf/
 ├── config/                  # Django project settings
 │   ├── settings.py          # Environment configuration
 │   ├── storage.py           # Non-strict manifest static storage

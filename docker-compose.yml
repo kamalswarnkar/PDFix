@@ -1,7 +1,7 @@
 services:
   web:
     build: .
-    container_name: pdfix_app
+    container_name: trypdf_app
     env_file:
       - .env
     environment:
@@ -14,8 +14,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - pdfix_media:/app/media
+      - trypdf_media:/app/media
     restart: unless-stopped
 
 volumes:
-  pdfix_media:
+  trypdf_media:

@@ -47,7 +47,7 @@ from .services.split_pdf import split_pdf
 from .services.unlock_pdf import unlock_pdf
 from .uploads import ToolError, media_path, validate_upload, validate_uploads
 
-MEDIA = tempfile.mkdtemp(prefix="pdfix-tests-")
+MEDIA = tempfile.mkdtemp(prefix="trypdf-tests-")
 
 
 def pdf_bytes(pages=3):
@@ -447,7 +447,7 @@ class GmailAuthClientFileTests(TestCase):
     def test_web_client_skips_non_loopback_redirects(self):
         path = self._write({"web": {
             "client_id": "x.apps.googleusercontent.com", "client_secret": "s",
-            "redirect_uris": ["https://pdfix.example/callback",
+            "redirect_uris": ["https://trypdf.example/callback",
                               "http://localhost:9000/cb"],
         }})
         _, _, host, port, sub = GmailAuthCommand()._read_client_file(path)
@@ -456,7 +456,7 @@ class GmailAuthClientFileTests(TestCase):
     def test_web_client_without_a_loopback_redirect_explains_both_fixes(self):
         path = self._write({"web": {
             "client_id": "x.apps.googleusercontent.com", "client_secret": "s",
-            "redirect_uris": ["https://pdfix.example/callback"],
+            "redirect_uris": ["https://trypdf.example/callback"],
         }})
         with self.assertRaises(CommandError) as caught:
             GmailAuthCommand()._read_client_file(path)

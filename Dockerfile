@@ -41,9 +41,9 @@ RUN DJANGO_SECRET_KEY=build-only-placeholder \
 #            live beside the code, because /app is not writable by this user.
 ENV SQLITE_PATH=/app/data/db.sqlite3
 RUN mkdir -p /app/media /app/data \
-    && useradd --system --uid 1000 --home /app pdfix \
-    && chown -R pdfix:pdfix /app/media /app/data
-USER pdfix
+    && useradd --system --uid 1000 --home /app trypdf \
+    && chown -R trypdf:trypdf /app/media /app/data
+USER trypdf
 
 EXPOSE 8000
 
