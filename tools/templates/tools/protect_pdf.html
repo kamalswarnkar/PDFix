@@ -1,13 +1,9 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Add AES-256 password protection to your PDF file and prevent unauthorized access using tryPDF! secure PDF protection tool.
-{% endblock %}
-{% block title %}Password Protect PDF Online Free - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
-    <h2>Password Protect PDF</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Add a password to your PDF so it cannot be opened without it. tryPDF! encrypts with AES-256, the strongest algorithm the PDF standard supports." %}
 
@@ -27,6 +23,7 @@
         <button type="submit">Protect</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

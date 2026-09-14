@@ -1,8 +1,4 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Rearrange the order of pages in your PDF easily using drag and drop with tryPDF! free online PDF page organizer.
-{% endblock %}
-{% block title %}Reorder PDF Pages Online Free | Organize PDF Pages - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -42,7 +38,7 @@
     </style>
 {% endblock %}
 {% block content %}
-    <h2>Reorder PDF Pages</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Drag the page thumbnails into the order you want, then download the rearranged PDF. Page previews are rendered in your browser - nothing is uploaded until you submit." %}
 
@@ -61,6 +57,7 @@
         <button type="submit">Reorder Pages</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

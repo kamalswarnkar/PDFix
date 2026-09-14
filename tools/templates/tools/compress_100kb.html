@@ -1,13 +1,9 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Compress PDF files to the smallest possible size while preserving readability. Targets around 100KB for easy form submissions. Free online PDF compression tool by tryPDF!.
-{% endblock %}
-{% block title %}Compress PDF to Smallest Size Online Free - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
-    <h2>Compress PDF to a Target Size</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Squeeze a PDF down to meet a strict upload limit — the kind government portals and job applications impose — while keeping it readable." %}
 
@@ -42,6 +38,7 @@
         <button type="submit">Compress PDF</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

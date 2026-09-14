@@ -1,8 +1,4 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Extract selected pages from a PDF file and create a new document instantly using tryPDF! free online tool.
-{% endblock %}
-{% block title %}Extract Pages from PDF Online Free - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -22,7 +18,7 @@
     </style>
 {% endblock %}
 {% block content %}
-    <h2>Extract Pages from PDF</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Pick the pages you need and build a new PDF from just those. Enter single pages, ranges, or a mix of both." %}
 
@@ -52,6 +48,7 @@
         <button type="submit">Extract Pages</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

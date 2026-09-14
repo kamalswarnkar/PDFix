@@ -20,6 +20,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 from .models import Feedback, Suggestion
+from .seo import PAGES
 from .services.compress_pdf import LEVELS, compress_pdf
 from .services.compress_to_size import compress_pdf_to_size
 from .services.docx_to_pdf import docx_to_pdf
@@ -195,6 +196,7 @@ def _run(request, name):
     # ponytail: a scandir per request; move to a cron/beat job if media grows big.
     cleanup_old_files()
     extra_context = {
+        "seo": PAGES[name],
         "max_upload_mb": settings.MAX_UPLOAD_MB,
         "max_upload_files": settings.MAX_UPLOAD_FILES,
         **(tool.context(request) if tool.context else {}),
@@ -254,19 +256,19 @@ def reorder_pdf_view(request):   return _run(request, "reorder_pdf")
 # ---------------------------------------------------------------------------
 @ensure_csrf_cookie
 def home(request):
-    return render(request, "tools/home.html")
+    return render(request, "tools/home.html", {"seo": PAGES["home"]})
 
 
 def privacy_view(request):
-    return render(request, "tools/privacy.html")
+    return render(request, "tools/privacy.html", {"seo": PAGES["privacy"]})
 
 
 def terms_view(request):
-    return render(request, "tools/terms.html")
+    return render(request, "tools/terms.html", {"seo": PAGES["terms"]})
 
 
 def about_view(request):
-    return render(request, "tools/about.html")
+    return render(request, "tools/about.html", {"seo": PAGES["about"]})
 
 
 def healthz(request):

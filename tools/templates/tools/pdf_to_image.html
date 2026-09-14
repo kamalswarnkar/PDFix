@@ -1,13 +1,9 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Convert PDF pages into high-quality images such as PNG or JPG using tryPDF! free online PDF to image converter.
-{% endblock %}
-{% block title %}Convert PDF to Image Online Free | PDF to PNG/JPG - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
-    <h2>Convert PDF to Images</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Turn every page of your PDF into an image file. You get a zip with one image per page, named so they stay in order." %}
 
@@ -44,6 +40,7 @@
         <button type="submit" id="submitBtn">Convert</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

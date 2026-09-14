@@ -1,13 +1,9 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Convert PDF documents into editable Word (DOCX) files while preserving layout as closely as possible.
-{% endblock %}
-{% block title %}Convert PDF to Word Online Free | PDF to DOCX - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
-    <h2>PDF to DOCX</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Convert PDF documents into editable Word files for easier modification and editing." %}
 
@@ -32,6 +28,7 @@
         <button type="submit" id="submitBtn">Convert</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

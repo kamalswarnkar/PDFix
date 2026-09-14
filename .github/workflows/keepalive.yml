@@ -1,0 +1,50 @@
+# Render's free tier suspends a web service after 15 minutes without traffic,
+# and the next visitor then waits ~50 seconds for a cold start. This pings
+# /healthz often enough that the service never idles out.
+#
+# Setup: Settings -> Secrets and variables -> Actions -> Variables ->
+#        New repository variable, name KEEPALIVE_URL,
+#        value https://<your-app>.onrender.com/healthz
+#
+# Two things worth knowing before this runs unattended:
+#  * GitHub's cron is best-effort and runs late under load, so the interval is
+#    10 minutes rather than 14 - a late ping still lands inside the window.
+#  * Staying awake around the clock uses ~720 of Render's 750 free instance
+#    hours a month. With a second free service on the same account, narrow the
+#    schedule to the hours you actually want warm, e.g. "*/10 6-22 * * *".
+#
+# GitHub disables scheduled workflows in a repository with no activity for 60
+# days; push a commit, or re-enable it from the Actions tab, if pings stop.
+name: Keep Render awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping the health endpoint
+        env:
+          URL: ${{ vars.KEEPALIVE_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error::Repository variable KEEPALIVE_URL is not set - see the comment at the top of this workflow."
+            exit 1
+          fi
+          # Retries cover the cold start: the first request after a suspend can
+          # take the better part of a minute, or fail outright.
+          curl --fail --silent --show-error --location \
+               --retry 5 --retry-all-errors --retry-delay 20 --max-time 90 \
+               --output /dev/null \
+               --write-out 'HTTP %{http_code} in %{time_total}s\n' \
+               "$URL"

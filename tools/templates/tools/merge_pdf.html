@@ -1,8 +1,4 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Merge multiple PDF files into one document quickly and securely with tryPDF!. Arrange them in any order and download the combined PDF instantly.
-{% endblock %}
-{% block title %}Merge PDF Online Free | Combine PDF Files - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -11,7 +7,7 @@
     </style>
 {% endblock %}
 {% block content %}
-    <h2>Merge PDF</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Combine two or more PDFs into a single document. Upload your files, drag the cards to set the order, and download the merged PDF." %}
 
@@ -30,6 +26,7 @@
         <button type="submit" id="submitBtn">Merge</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

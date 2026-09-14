@@ -1,13 +1,9 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Remove password protection from a PDF file if you know the password using tryPDF! free online PDF unlock tool.
-{% endblock %}
-{% block title %}Unlock PDF Online Free | Remove PDF Password - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
-    <h2>Remove Password from PDF</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Remove password protection from a PDF file, so long as you know the correct password." %}
 
@@ -27,6 +23,7 @@
         <button type="submit">Unlock</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

@@ -1,8 +1,4 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Rotate PDF pages clockwise or counterclockwise easily using tryPDF! free online PDF rotation tool.
-{% endblock %}
-{% block title %}Rotate PDF Pages Online Free - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -27,7 +23,7 @@
     </style>
 {% endblock %}
 {% block content %}
-    <h2>Rotate PDF</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Rotate PDF pages clockwise or counterclockwise to fix orientation issues in your document." %}
 
@@ -56,6 +52,7 @@
         <button type="submit">Rotate</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

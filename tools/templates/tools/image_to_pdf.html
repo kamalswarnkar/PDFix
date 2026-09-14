@@ -1,8 +1,4 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Convert JPG or PNG images into a single PDF document quickly and securely with tryPDF! image to PDF converter.
-{% endblock %}
-{% block title %}Convert Image to PDF Online Free | JPG, PNG to PDF - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
     <style>
@@ -11,7 +7,7 @@
     </style>
 {% endblock %}
 {% block content %}
-    <h2>Convert Images to PDF</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Turn JPG, PNG or WebP images into a single PDF. Photos keep their full resolution and phone-camera rotation is corrected automatically." %}
 
@@ -41,6 +37,7 @@
         <button type="submit">Convert to PDF</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

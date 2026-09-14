@@ -9,6 +9,7 @@ import base64
 import io
 import json
 import os
+import re
 import shutil
 import socketserver
 import tempfile
@@ -45,6 +46,7 @@ from .services.reorder_pdf import parse_order, reorder_pdf
 from .services.rotate_pdf import rotate_pdf
 from .services.split_pdf import split_pdf
 from .services.unlock_pdf import unlock_pdf
+from .seo import PAGES
 from .uploads import ToolError, media_path, validate_upload, validate_uploads
 
 MEDIA = tempfile.mkdtemp(prefix="trypdf-tests-")
@@ -598,3 +600,58 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, {"ok": True})
         self.assertTrue(Feedback.objects.filter(feature="Split PDF").exists())
+
+
+class SEOTests(TestCase):
+    """Every page has to look different to a crawler, or they compete with
+    each other for the same searches instead of ranking for their own."""
+
+    def _html(self, name):
+        return self.client.get(reverse(name)).content.decode()
+
+    def test_every_url_has_seo_copy(self):
+        """A page rendered without `seo` in its context silently loses its
+        title, description and schema, which is invisible in the browser."""
+        for name in PAGES:
+            with self.subTest(page=name):
+                html = self._html(name)
+                self.assertIn("<title>%s</title>" % PAGES[name]["title"], html)
+                self.assertIn(PAGES[name]["description"], html)
+
+    def test_titles_and_descriptions_are_unique(self):
+        titles = [page["title"] for page in PAGES.values()]
+        descriptions = [page["description"] for page in PAGES.values()]
+        self.assertEqual(len(set(titles)), len(titles))
+        self.assertEqual(len(set(descriptions)), len(descriptions))
+
+    def test_titles_and_descriptions_fit_a_search_result(self):
+        for name, page in PAGES.items():
+            with self.subTest(page=name):
+                self.assertLessEqual(len(page["title"]), 65)
+                self.assertLessEqual(len(page["description"]), 160)
+
+    def test_exactly_one_h1_per_page(self):
+        for name in PAGES:
+            with self.subTest(page=name):
+                self.assertEqual(self._html(name).count("<h1"), 1)
+
+    def test_structured_data_is_valid_json(self):
+        pattern = r'<script type="application/ld\+json">(.*?)</script>'
+        for name in PAGES:
+            with self.subTest(page=name):
+                blocks = re.findall(pattern, self._html(name), re.S)
+                self.assertTrue(blocks)
+                for block in blocks:
+                    json.loads(block)
+
+    def test_canonical_ignores_query_parameters(self):
+        """A shared ?utm_source= link must point back at the clean URL."""
+        html = self.client.get("/merge-pdf/?utm_source=twitter").content.decode()
+        self.assertIn('<link rel="canonical" href="http://testserver/merge-pdf/">', html)
+
+    def test_related_links_point_at_real_tools(self):
+        for name, page in PAGES.items():
+            for related in page["related"]:
+                with self.subTest(page=name, related=related):
+                    self.assertIn(related, PAGES)
+                    self.assertNotEqual(related, name)

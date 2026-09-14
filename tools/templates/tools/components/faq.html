@@ -1,31 +1,10 @@
 <div class="faq">
-    <h3>Frequently Asked Questions</h3>
+    <h2>Frequently Asked Questions</h2>
 
-    <div class="faq-item">
-        <h4>Is tryPDF! free to use?</h4>
-        <p>
-            Yes. All tryPDF! tools are completely free to use online with no signup required.
-        </p>
-    </div>
-
-    <div class="faq-item">
-        <h4>Are my files secure?</h4>
-        <p>
-            Yes. Files are processed on the server and deleted as soon as your download starts. Nothing is kept.
-        </p>
-    </div>
-
-    <div class="faq-item">
-        <h4>Do you store uploaded files?</h4>
-        <p>
-            No. Uploads are deleted straight after processing, and results are deleted as they are downloaded.
-        </p>
-    </div>
-
-    <div class="faq-item">
-        <h4>Do these tools work on mobile?</h4>
-        <p>
-            Yes. tryPDF! tools work on desktop, tablet, and mobile browsers.
-        </p>
-    </div>
+    {% for question, answer in seo.faq %}
+        <div class="faq-item">
+            <h3>{{ question }}</h3>
+            <p>{{ answer }}</p>
+        </div>
+    {% endfor %}
 </div>

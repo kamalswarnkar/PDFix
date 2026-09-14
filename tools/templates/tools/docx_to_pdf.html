@@ -1,13 +1,9 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Convert Word documents (DOCX) to high quality PDF files quickly using tryPDF! free online converter.
-{% endblock %}
-{% block title %}Convert DOCX to PDF Online Free | Word to PDF - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
-    <h2>DOCX to PDF</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Convert Word documents (DOCX) into professional PDF files while preserving formatting." %}
 
@@ -24,6 +20,7 @@
         <button type="submit" id="submitBtn">Convert</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}

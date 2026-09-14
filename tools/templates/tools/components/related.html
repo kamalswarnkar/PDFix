@@ -1,0 +1,8 @@
+{% if seo.related_links %}
+    <div class="related">
+        <h2>Related PDF tools</h2>
+        {% for tool in seo.related_links %}
+            <a href="{% url tool.name %}">{{ tool.label }}</a>
+        {% endfor %}
+    </div>
+{% endif %}

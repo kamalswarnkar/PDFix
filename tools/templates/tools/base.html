@@ -14,54 +14,73 @@
         gtag('config', 'G-C2B0CGLHDZ');
     </script>
 
-    <title>{% block title %}tryPDF! - Free Online PDF Tools{% endblock %}</title>
+    {# Every page's title, description, FAQ and schema come from tools/seo.py, #}
+    {# so each one reads differently to a crawler instead of repeating a       #}
+    {# single generic block seventeen times.                                   #}
+    <title>{{ seo.title }}</title>
 
-    <meta name="description" content="{% block meta_description %}Free online PDF tools to merge, split, compress, convert and manage PDF files quickly and securely.{% endblock %}">
-    <meta name="keywords" content="pdf tools, merge pdf, split pdf, compress pdf, pdf converter, pdf to docx, docx to pdf">
-    <meta name="robots" content="index, follow">
+    <meta name="description" content="{{ seo.description }}">
+    <meta name="robots" content="index, follow, max-image-preview:large">
 
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="tryPDF!">
+    <meta property="og:title" content="{{ seo.title }}">
+    <meta property="og:description" content="{{ seo.description }}">
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'logo.png' %}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ seo.title }}">
+    <meta name="twitter:description" content="{{ seo.description }}">
+
+    {% if seo.app %}
+    <script type="application/ld+json">
+        {
+            "@context":"https://schema.org",
+            "@type":"WebApplication",
+            "name":"{{ seo.h1|escapejs }}",
+            "url":"{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
+            "applicationCategory":"UtilitiesApplication",
+            "operatingSystem":"Any (web browser)",
+            "browserRequirements":"Requires JavaScript",
+            "description":"{{ seo.description|escapejs }}",
+            "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}
+        }
+    </script>
+    {% endif %}
+
+    {% if seo.faq %}
     <script type="application/ld+json">
         {
             "@context":"https://schema.org",
             "@type":"FAQPage",
-            "mainEntity":[
+            "mainEntity":[{% for question, answer in seo.faq %}
                 {
                     "@type":"Question",
-                    "name":"Is tryPDF! free to use?",
-                    "acceptedAnswer":{
-                        "@type":"Answer",
-                        "text":"Yes. All tryPDF! tools are completely free to use online with no signup required."
-                    }
-                },
-                {
-                    "@type":"Question",
-                    "name":"Are my files secure?",
-                    "acceptedAnswer":{
-                        "@type":"Answer",
-                        "text":"Yes. Files are processed on the server and deleted as soon as your download starts. Nothing is kept."
-                    }
-                },
-                {
-                    "@type":"Question",
-                    "name":"Do you store uploaded files?",
-                    "acceptedAnswer":{
-                        "@type":"Answer",
-                        "text":"No. Uploads are deleted straight after processing, and results are deleted as they are downloaded."
-                    }
-                },
-                {
-                    "@type":"Question",
-                    "name":"Do these tools work on mobile?",
-                    "acceptedAnswer":{
-                        "@type":"Answer",
-                        "text":"Yes. tryPDF! tools work on desktop, tablet, and mobile browsers."
-                    }
-                }
+                    "name":"{{ question|escapejs }}",
+                    "acceptedAnswer":{"@type":"Answer","text":"{{ answer|escapejs }}"}
+                }{% if not forloop.last %},{% endif %}{% endfor %}
             ]
         }
     </script>
+    {% endif %}
 
-    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+    {% if request.path != '/' %}
+    <script type="application/ld+json">
+        {
+            "@context":"https://schema.org",
+            "@type":"BreadcrumbList",
+            "itemListElement":[
+                {"@type":"ListItem","position":1,"name":"Home",
+                 "item":"{{ request.scheme }}://{{ request.get_host }}/"},
+                {"@type":"ListItem","position":2,"name":"{{ seo.h1|escapejs }}"}
+            ]
+        }
+    </script>
+    {% endif %}
+
+    {# request.path, not build_absolute_uri: a ?utm_source= link must not #}
+    {# canonicalise to a different URL than the clean one.               #}
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
 
     <link rel="icon" href="{% static 'favicon.ico' %}">
     
@@ -250,17 +269,47 @@
             padding-top:20px;
         }
 
-        .faq h3{
+        .faq h2{
             margin-bottom:15px;
+            font-size:20px;
         }
 
         .faq-item{
             margin-bottom:15px;
         }
 
-        .faq-item h4{
+        .faq-item h3{
             margin-bottom:5px;
             font-size:15px;
+        }
+
+        /* Related tools strip */
+        .related{
+            margin-top:40px;
+            border-top:1px solid #eee;
+            padding-top:20px;
+        }
+
+        .related h2{
+            margin-bottom:12px;
+            font-size:18px;
+        }
+
+        .related a{
+            display:inline-block;
+            margin:0 8px 8px 0;
+            padding:8px 14px;
+            border:1px solid #e5e7eb;
+            border-radius:20px;
+            background:#fafafa;
+            color:#374151;
+            font-size:13px;
+            text-decoration:none;
+        }
+
+        .related a:hover{
+            border-color:#e5322d;
+            color:#e5322d;
         }
 
         footer{
@@ -875,6 +924,13 @@
                     if (!next) throw new Error('no container');
                     container.innerHTML = next.innerHTML;
                     document.title = doc.title;
+                    // Keep the head in step with the swapped page: a crawler that
+                    // runs JS should not read the previous page's description.
+                    ['meta[name="description"]', 'link[rel="canonical"]'].forEach(function (sel) {
+                        var from = doc.querySelector(sel), to = document.querySelector(sel);
+                        if (from && to) to.setAttribute(sel[0] === 'm' ? 'content' : 'href',
+                            from.getAttribute(sel[0] === 'm' ? 'content' : 'href'));
+                    });
                     if (push) history.pushState({}, '', url);
                     window.scrollTo(0, 0);
                     return runScripts(container);

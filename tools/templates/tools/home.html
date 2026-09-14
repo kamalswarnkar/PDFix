@@ -1,8 +1,4 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Free online PDF tools to merge, split, compress, convert and manage PDF files quickly and securely. No signup required.
-{% endblock %}
-{% block title %}tryPDF! - Free Online PDF Tools | Merge, Split, Compress & Convert PDFs{% endblock %}
 {% block head %}
     <style>
         .tool-card strong{ display:block; font-size:15px; margin-bottom:4px; }
@@ -10,7 +6,7 @@
     </style>
 {% endblock %}
 {% block content %}
-    <h1>Free Online PDF Tools</h1>
+    <h1>{{ seo.h1 }}</h1>
 
     <p>
         Merge, split, compress, convert and edit PDF files in your browser.
@@ -33,5 +29,6 @@
         <a class="tool-card" href="{% url 'pdf_to_docx' %}"><strong>📄 PDF to DOCX</strong><span>Editable Word from a PDF</span></a>
     </div>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
 {% endblock %}

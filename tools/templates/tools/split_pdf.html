@@ -1,13 +1,9 @@
 {% extends "tools/base.html" %}
-{% block meta_description %}
-    Split a PDF into separate one-page files and download them as a zip. Free, fast and secure with tryPDF!.
-{% endblock %}
-{% block title %}Split PDF Online Free | Separate PDF Pages - tryPDF!{% endblock %}
 {% block head %}
     {% include "tools/components/spinner_style.html" %}
 {% endblock %}
 {% block content %}
-    <h2>Split PDF</h2>
+    <h1>{{ seo.h1 }}</h1>
 
     {% include "tools/components/tool_desc.html" with text="Break a PDF into one file per page, delivered as a zip. Pages are numbered so they stay in order on your computer. To pull out a specific range instead, use Extract Pages." %}
 
@@ -24,6 +20,7 @@
         <button type="submit">Split PDF</button>
     </form>
 
+    {% include "tools/components/related.html" %}
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
