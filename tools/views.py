@@ -188,6 +188,12 @@ def _download(path, download_name):
 def _run(request, name):
     """Shared GET/POST handling for every tool."""
     tool = TOOLS[name]
+    # Sweep on every tool hit, not only successful POSTs. _download unlinks the
+    # file as it streams, but that cannot happen on Windows or after a killed
+    # worker, so on a quiet site leftovers outlived the retention window while
+    # waiting for the next upload to trigger a sweep.
+    # ponytail: a scandir per request; move to a cron/beat job if media grows big.
+    cleanup_old_files()
     extra_context = {
         "max_upload_mb": settings.MAX_UPLOAD_MB,
         "max_upload_files": settings.MAX_UPLOAD_FILES,
@@ -209,7 +215,6 @@ def _run(request, name):
             payload = upload
             first_name = upload.name
 
-        cleanup_old_files()
         options = tool.options(request) if tool.options else {}
         output_name = tool.service(payload, **options)
 

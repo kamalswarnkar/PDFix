@@ -576,7 +576,7 @@
     <header>
         <div class="header-container">
             <a class="logo" href="/">
-                <img src="{% static 'logo.png' %}" alt="tryPDF! logo">
+                <img src="{% static 'logo.png' %}" alt="tryPDF! logo" width="163" height="168">
                 <span><span class="try">try</span>PDF!</span>
             </a>
         </div>
@@ -805,6 +805,101 @@
                 this.textContent = 'Submit';
             }
         });
+    </script>
+
+    <script>
+    /* Client-side navigation.
+
+       The server still renders every page in full - crawlers, no-JS visitors and
+       a hard refresh all behave exactly as before. This only intercepts in-app
+       link clicks and swaps .container instead of reloading the document, so the
+       header, logo, footer and modals are never torn down and rebuilt.
+
+       Forms are deliberately left alone: every tool posts natively and gets a
+       file back, and that download path is untouched.
+
+       ponytail: ~40 lines instead of a framework. If this ever needs partial
+       swaps, prefetch or transitions, adopt Turbo rather than growing it. */
+    (function () {
+        var container = document.querySelector('.container');
+        if (!container || !window.history.pushState || !window.DOMParser) return;
+
+        // External libs (pdf.js, Sortable) stay loaded across swaps; re-running
+        // them each time would refetch a megabyte and redefine globals.
+        var loaded = {};
+        document.querySelectorAll('script[src]').forEach(function (s) { loaded[s.src] = true; });
+
+        function runScripts(root) {
+            return Array.prototype.slice.call(root.querySelectorAll('script'))
+                .reduce(function (chain, old) {
+                    return chain.then(function () {
+                        if (old.src && loaded[old.src]) return;
+                        return new Promise(function (resolve) {
+                            var s = document.createElement('script');
+                            for (var i = 0; i < old.attributes.length; i++) {
+                                s.setAttribute(old.attributes[i].name, old.attributes[i].value);
+                            }
+                            // Page scripts declare top-level consts. Re-running them in
+                            // global scope would throw "already declared" on the second
+                            // visit, so give each run its own scope. Anything shared
+                            // between scripts already goes through window.* explicitly.
+                            var inline = !old.src && (!old.type || old.type === 'text/javascript');
+                            // The line break matters: a trailing // comment in the
+                            // page script would otherwise swallow the closing call.
+                            s.textContent = inline
+                                ? `(function(){${old.textContent}
+})();`
+                                : old.textContent;
+                            if (old.src) {
+                                loaded[old.src] = true;
+                                s.onload = s.onerror = resolve;
+                                old.parentNode.replaceChild(s, old);
+                            } else {
+                                old.parentNode.replaceChild(s, old);
+                                resolve();
+                            }
+                        });
+                    });
+                }, Promise.resolve());
+        }
+
+        function load(url, push) {
+            return fetch(url, { credentials: 'same-origin' })
+                .then(function (r) {
+                    if (!r.ok) throw new Error(r.status);
+                    return r.text();
+                })
+                .then(function (html) {
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    var next = doc.querySelector('.container');
+                    if (!next) throw new Error('no container');
+                    container.innerHTML = next.innerHTML;
+                    document.title = doc.title;
+                    if (push) history.pushState({}, '', url);
+                    window.scrollTo(0, 0);
+                    return runScripts(container);
+                })
+                .catch(function () {
+                    // Anything unexpected: hand back to a normal page load.
+                    window.location.href = url;
+                });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (e.defaultPrevented || e.button !== 0) return;
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            var a = e.target.closest ? e.target.closest('a') : null;
+            if (!a || !a.href) return;
+            if (a.target || a.hasAttribute('download')) return;
+            if (a.origin !== window.location.origin) return;
+            // Same-page anchors keep the browser's native behaviour.
+            if (a.hash && a.pathname === window.location.pathname) return;
+            e.preventDefault();
+            load(a.href, true);
+        });
+
+        window.addEventListener('popstate', function () { load(window.location.href, false); });
+    })();
     </script>
 </body>
 </html>
