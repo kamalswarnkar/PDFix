@@ -57,10 +57,7 @@ if not SECRET_KEY:
         )
     SECRET_KEY = "django-insecure-local-development-only-key"
 
-ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1",
-    "trypdf.in",
-    "www.trypdf.in",
-    "pdfix.onrender.com",)
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
 # Railway / Render inject the public hostname; fold it into both lists.
