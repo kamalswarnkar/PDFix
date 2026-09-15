@@ -5,10 +5,9 @@ from ..uploads import ToolError, new_media_path, read_pdf
 VALID_ANGLES = (90, 180, 270)
 
 
-def rotate_pdf(file, angle, pages=None):
-    """Rotate pages clockwise by `angle` degrees.
+def rotate_pdf(file, angle):
+    """Rotate every page clockwise by `angle` degrees.
 
-    `pages` is an optional list of 1-based page numbers; None rotates everything.
     Rotation is relative, so it stacks on any rotation the page already carries.
     """
     try:
@@ -20,12 +19,10 @@ def rotate_pdf(file, angle, pages=None):
         raise ToolError("Rotation must be 90, 180 or 270 degrees.")
 
     reader = read_pdf(file, file.name)
-    targets = set(pages) if pages else None
 
     writer = PdfWriter()
-    for number, page in enumerate(reader.pages, start=1):
-        if targets is None or number in targets:
-            page.rotate(angle)
+    for page in reader.pages:
+        page.rotate(angle)
         writer.add_page(page)
 
     filename, output_path = new_media_path("_rotated.pdf")

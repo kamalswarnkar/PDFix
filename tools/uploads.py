@@ -4,10 +4,15 @@ Every tool routes uploads through validate_upload() so the size cap, the
 extension allow-list and the magic-byte check are enforced in exactly one
 place instead of thirteen.
 """
+import logging
 import os
+import shutil
+import time
 import uuid
 
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ToolError(Exception):
@@ -76,12 +81,12 @@ def validate_upload(upload, allowed_extensions):
             )
 
 
-def validate_uploads(uploads, allowed_extensions, max_files=None):
+def validate_uploads(uploads, allowed_extensions):
     """Validate a list of uploads and enforce the per-request count/size caps."""
     if not uploads:
         raise ToolError("No files selected. Please upload at least one file.")
 
-    limit = max_files or settings.MAX_UPLOAD_FILES
+    limit = settings.MAX_UPLOAD_FILES
     if len(uploads) > limit:
         raise ToolError(
             f"Too many files ({len(uploads)}). Please upload at most {limit} at a time."
@@ -168,3 +173,36 @@ def save_upload(upload, suffix):
         for chunk in upload.chunks():
             out.write(chunk)
     return path
+
+
+def cleanup_old_files():
+    """Delete anything left in MEDIA_ROOT past the retention window.
+
+    On POSIX the download is unlinked as soon as it is streamed, so in normal
+    operation this only sweeps up after a crash or a killed worker.
+    """
+    folder = settings.MEDIA_ROOT
+    os.makedirs(folder, exist_ok=True)
+
+    cutoff = time.time() - settings.MEDIA_RETENTION_SECONDS
+
+    try:
+        entries = os.scandir(folder)
+    except OSError:
+        logger.warning("cleanup: cannot read %s", folder)
+        return
+
+    with entries:
+        for entry in entries:
+            if entry.name == ".gitignore":
+                continue
+            try:
+                if entry.stat().st_mtime > cutoff:
+                    continue
+                if entry.is_dir(follow_symlinks=False):
+                    shutil.rmtree(entry.path, ignore_errors=True)
+                else:
+                    os.remove(entry.path)
+            except OSError:
+                # Removed concurrently, or still open by another worker.
+                continue

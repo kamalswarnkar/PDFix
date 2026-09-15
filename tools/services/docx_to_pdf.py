@@ -10,36 +10,6 @@ from ..uploads import ToolError, save_upload
 logger = logging.getLogger(__name__)
 
 
-def _convert_with_word_com(input_path, output_path):
-    """Drive Microsoft Word through pywin32 - fastest and highest fidelity."""
-    try:
-        import pythoncom
-        import win32com.client
-    except ImportError:
-        return False
-
-    word = None
-    doc = None
-    try:
-        pythoncom.CoInitialize()
-        word = win32com.client.Dispatch("Word.Application")
-        word.Visible = False
-        word.DisplayAlerts = 0
-        doc = word.Documents.Open(os.path.abspath(input_path), ReadOnly=True)
-        doc.SaveAs2(os.path.abspath(output_path), FileFormat=17)  # wdFormatPDF
-        return os.path.exists(output_path)
-    except Exception as exc:
-        logger.info("Word COM DOCX->PDF failed: %s", exc)
-        return False
-    finally:
-        for close in (lambda: doc and doc.Close(0), lambda: word and word.Quit(),
-                      pythoncom.CoUninitialize):
-            try:
-                close()
-            except Exception:
-                pass
-
-
 def _convert_with_libreoffice(input_path, output_dir, output_path, uid):
     """LibreOffice headless DOCX -> PDF, with a per-request user profile.
 
@@ -72,16 +42,13 @@ def _convert_with_libreoffice(input_path, output_dir, output_path, uid):
 
 
 def docx_to_pdf(file):
-    """Convert a Word document to PDF using Word if present, else LibreOffice."""
+    """Convert a Word document to PDF with LibreOffice."""
     input_path = save_upload(file, ".docx")
     uid = os.path.splitext(os.path.basename(input_path))[0]
     output_name = f"{uid}.pdf"
     output_path = os.path.join(settings.MEDIA_ROOT, output_name)
 
     try:
-        if os.name == "nt" and _convert_with_word_com(input_path, output_path):
-            return output_name
-
         if _convert_with_libreoffice(input_path, settings.MEDIA_ROOT, output_path, uid):
             return output_name
 

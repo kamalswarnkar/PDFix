@@ -189,7 +189,9 @@ trypdf/
 │   └── urls.py              # App routing
 ├── tools/                   # Core application
 │   ├── models.py            # Feedback & Suggestion database models
-│   ├── uploads.py           # Shared upload validation + media helpers
+│   ├── uploads.py           # Shared upload validation, media helpers, cleanup
+│   ├── throttle.py          # Per-IP limits for tools, feedback and admin login
+│   ├── seo.py               # Per-page title, description, FAQ and links
 │   ├── tests.py             # Test suite
 │   ├── services/            # Isolated file processing services
 │   │   ├── compress_pdf.py
@@ -198,12 +200,10 @@ trypdf/
 │   ├── templates/tools/     # Responsive HTML templates
 │   │   ├── components/      # Shared uploader, FAQ, spinner, and alerts
 │   │   └── ...
-│   ├── utils/
-│   │   └── cleanup.py       # Temporary file housekeeping
 │   ├── views.py             # Route request handlers
 │   └── urls.py              # App URLs
 ├── media/                   # Workspace for active file conversions
-├── static/                  # Brand assets (logo, favicon)
+├── static/                  # Brand assets, plus vendored pdf.js and Sortable
 ├── Dockerfile               # Production multi-step docker builder
 ├── docker-compose.yml       # Production-ready docker compose orchestration
 ├── .env.example             # Config file template

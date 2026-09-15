@@ -10,6 +10,9 @@ from ..uploads import ToolError, new_media_path, safe_stem
 DPI_CHOICES = (72, 150, 300)
 FORMATS = ("png", "jpg")
 MAX_PAGES = 300
+# 300 pages at 300 DPI can run to gigabytes, and the disk is both ephemeral and
+# shared with every other request. Stop writing rather than fill it.
+MAX_OUTPUT_BYTES = 200 * 1024 * 1024
 
 
 def pdf_to_images(files, dpi=150, image_format="png"):
@@ -20,6 +23,7 @@ def pdf_to_images(files, dpi=150, image_format="png"):
     filename, zip_path = new_media_path("_images.zip")
     used_stems = {}
     rendered = 0
+    written = 0
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
         for upload in files:
@@ -62,6 +66,12 @@ def pdf_to_images(files, dpi=150, image_format="png"):
                     archive.writestr(
                         f"{stem}_page_{index:0{width}d}.{image_format}", data
                     )
+                    written += len(data)
+                    if written > MAX_OUTPUT_BYTES:
+                        raise ToolError(
+                            "Those pages are too large to convert in one go. "
+                            "Try a lower DPI, or split the work into batches."
+                        )
 
     if rendered == 0:
         raise ToolError("Those PDFs contain no pages.")

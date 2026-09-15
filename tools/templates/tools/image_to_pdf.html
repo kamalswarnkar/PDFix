@@ -1,6 +1,6 @@
 {% extends "tools/base.html" %}
+{% load static %}
 {% block head %}
-    {% include "tools/components/spinner_style.html" %}
     <style>
         .file-card{ cursor:grab; }
         #statusMessage{ font-size:13px; color:#666; margin-top:10px; }
@@ -41,11 +41,9 @@
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js"
-            integrity="sha512-csIng5zcB+XpulRUa+ev1zKo7zRNGpEaVfNB9On1no9KYTEY/rLGAEEpvgdw6nim1WdTuihZY1eqZ31K7/fZjw=="
-            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script nonce="{{ csp_nonce }}" src="{% static 'vendor/Sortable.min.js' %}"></script>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
         const container = document.getElementById("previewContainer");
         const statusMessage = document.getElementById("statusMessage");
 

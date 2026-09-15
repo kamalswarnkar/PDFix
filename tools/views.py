@@ -8,7 +8,6 @@ cleanup are written once rather than thirteen times.
 import logging
 import os
 import threading
-import time
 from dataclasses import dataclass
 from typing import Callable, Optional
 
@@ -27,15 +26,20 @@ from .services.docx_to_pdf import docx_to_pdf
 from .services.extract_pages import extract_pages
 from .services.image_to_pdf import PAGE_SIZES, img_to_pdf
 from .services.merge_pdf import merge_pdfs
-from .services.pdf_to_docx import pdf_to_docx, word_engine_available
+from .services.pdf_to_docx import pdf_to_docx
 from .services.pdf_to_image import DPI_CHOICES, FORMATS, pdf_to_images
 from .services.protect_pdf import protect_pdf
 from .services.reorder_pdf import reorder_pdf
 from .services.rotate_pdf import rotate_pdf
 from .services.split_pdf import split_pdf
 from .services.unlock_pdf import unlock_pdf
-from .uploads import ToolError, validate_upload, validate_uploads
-from .utils.cleanup import cleanup_old_files
+from .throttle import throttled
+from .uploads import (
+    ToolError,
+    cleanup_old_files,
+    validate_upload,
+    validate_uploads,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +66,6 @@ class Tool:
     multiple: bool = False
     #  request -> extra keyword arguments for the service; may raise ToolError
     options: Optional[Callable] = None
-    #  request -> extra template context, for both GET and error renders
-    context: Optional[Callable] = None
-    max_files: Optional[int] = None
 
 
 def _int_option(request, name, choices, default):
@@ -132,7 +133,6 @@ TOOLS = {
     "pdf_to_docx": Tool(
         template="tools/pdf_to_docx.html", service=pdf_to_docx,
         suffix="", output_ext=".docx",
-        context=lambda r: {"word_engine_available": word_engine_available()},
     ),
     "docx_to_pdf": Tool(
         template="tools/docx_to_pdf.html", service=docx_to_pdf,
@@ -199,16 +199,27 @@ def _run(request, name):
         "seo": PAGES[name],
         "max_upload_mb": settings.MAX_UPLOAD_MB,
         "max_upload_files": settings.MAX_UPLOAD_FILES,
-        **(tool.context(request) if tool.context else {}),
     }
 
     if request.method != "POST":
         return render(request, tool.template, extra_context)
 
+    # A conversion can hold this worker for CONVERT_TIMEOUT_SECONDS, and there
+    # are only a handful of workers. Cap how many one address can start.
+    if throttled(request, "tool", settings.TOOL_RATE_LIMIT,
+                 settings.TOOL_RATE_WINDOW_SECONDS):
+        return render(request, tool.template, {
+            "error_message": (
+                "You have run a lot of conversions in the last few minutes. "
+                "Please wait a moment and try again."
+            ),
+            **extra_context,
+        }, status=429)
+
     try:
         if tool.multiple:
             uploads = request.FILES.getlist(tool.field_name)
-            validate_uploads(uploads, tool.accepts, tool.max_files)
+            validate_uploads(uploads, tool.accepts)
             payload = uploads
             first_name = uploads[0].name
         else:
@@ -279,32 +290,10 @@ def healthz(request):
 # ---------------------------------------------------------------------------
 # Feedback and suggestions
 # ---------------------------------------------------------------------------
-_recent_submissions = {}
-_submissions_lock = threading.Lock()
-
-
 def _rate_limited(request):
-    """Crude per-IP throttle so the form cannot be used to burn the email quota.
-
-    ponytail: in-process dict, so each gunicorn worker counts separately and the
-    counters reset on deploy. Move to the cache framework if you ever run enough
-    workers for that to matter.
-    """
-    ip = (request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
-          or request.META.get("REMOTE_ADDR", "unknown"))
-    now = time.time()
-    window = settings.FEEDBACK_RATE_WINDOW_SECONDS
-
-    with _submissions_lock:
-        if len(_recent_submissions) > 10000:
-            _recent_submissions.clear()
-        hits = [t for t in _recent_submissions.get(ip, []) if now - t < window]
-        if len(hits) >= settings.FEEDBACK_RATE_LIMIT:
-            _recent_submissions[ip] = hits
-            return True
-        hits.append(now)
-        _recent_submissions[ip] = hits
-        return False
+    """Per-IP cap on submissions, so the forms cannot burn the email quota."""
+    return throttled(request, "feedback", settings.FEEDBACK_RATE_LIMIT,
+                     settings.FEEDBACK_RATE_WINDOW_SECONDS)
 
 
 def _send_email(subject, message):

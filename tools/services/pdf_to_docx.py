@@ -4,7 +4,6 @@ import os
 import shutil
 import subprocess
 import time
-from functools import lru_cache
 
 from django.conf import settings
 
@@ -22,42 +21,6 @@ PDF2DOCX_MAX_PAGES = 10
 
 def _timeout():
     return settings.CONVERT_TIMEOUT_SECONDS
-
-
-@lru_cache(maxsize=1)
-def word_engine_available():
-    """Whether Microsoft Word can be driven for high-fidelity conversion.
-
-    Cached: the PowerShell probe below costs seconds, and this is called on
-    every GET of the tool page.
-    """
-    if os.name != "nt":
-        return False
-    try:
-        import win32com.client  # noqa: F401
-
-        return True
-    except Exception:
-        pass
-
-    try:
-        subprocess.run(
-            [
-                "powershell",
-                "-NoProfile",
-                "-NonInteractive",
-                "-Command",
-                "$word=$null; try { $word=New-Object -ComObject Word.Application; 'ok' } "
-                "finally { if($word -ne $null){$word.Quit()} }",
-            ],
-            check=True,
-            timeout=6,
-            capture_output=True,
-            text=True,
-        )
-        return True
-    except Exception:
-        return False
 
 
 def _mp_context():
@@ -90,76 +53,6 @@ def _run_in_process(target, args, timeout):
         return False
 
     return bool(not queue.empty() and queue.get())
-
-
-def _word_com_worker(input_path, output_path, result_queue):
-    word = None
-    doc = None
-    try:
-        import pythoncom
-        import win32com.client
-    except ImportError:
-        result_queue.put(False)
-        return
-
-    try:
-        pythoncom.CoInitialize()
-        word = win32com.client.Dispatch("Word.Application")
-        word.Visible = False
-        word.DisplayAlerts = 0
-        doc = word.Documents.Open(
-            FileName=os.path.abspath(input_path),
-            ConfirmConversions=False,
-            ReadOnly=True,
-            AddToRecentFiles=False,
-            Revert=False,
-            NoEncodingDialog=True,
-        )
-        doc.SaveAs2(os.path.abspath(output_path), FileFormat=16)  # wdFormatXMLDocument
-        result_queue.put(os.path.exists(output_path))
-    except Exception:
-        result_queue.put(False)
-    finally:
-        for close in (lambda: doc and doc.Close(0), lambda: word and word.Quit(),
-                      pythoncom.CoUninitialize):
-            try:
-                close()
-            except Exception:
-                pass
-
-
-def _convert_with_word_powershell(input_path, output_path, timeout):
-    """Word automation without pywin32 - the path that works on a bare Windows box."""
-    if os.name != "nt":
-        return False
-
-    in_ps = os.path.abspath(input_path).replace("'", "''")
-    out_ps = os.path.abspath(output_path).replace("'", "''")
-    script = (
-        "$ErrorActionPreference='Stop';"
-        "$word=$null;$doc=$null;"
-        "try {"
-        "$word=New-Object -ComObject Word.Application;"
-        "$word.Visible=$false;$word.DisplayAlerts=0;"
-        f"$doc=$word.Documents.Open('{in_ps}',$false,$true);"
-        f"$doc.SaveAs2('{out_ps}',16);"
-        "} finally {"
-        "if($doc -ne $null){$doc.Close(0)};"
-        "if($word -ne $null){$word.Quit()}"
-        "}"
-    )
-
-    try:
-        subprocess.run(
-            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
-            check=True,
-            timeout=timeout,
-            capture_output=True,
-        )
-        return os.path.exists(output_path)
-    except Exception as exc:
-        logger.info("Word (PowerShell) PDF->DOCX failed: %s", exc)
-        return False
 
 
 def _pdf2docx_worker(input_path, output_path, result_queue):
@@ -247,19 +140,12 @@ def pdf_to_docx(file):
         return min(_timeout(), deadline - time.monotonic())
 
     try:
-        # Tier 1: Microsoft Word - best fidelity, Windows only.
-        if os.name == "nt" and word_engine_available() and remaining() > 5:
-            if _run_in_process(_word_com_worker, (input_path, output_path), remaining()):
-                return output_name
-            if _convert_with_word_powershell(input_path, output_path, remaining()):
-                return output_name
-
-        # Tier 2: pdf2docx - good text/layout fidelity for ordinary PDFs.
+        # Tier 1: pdf2docx - good text/layout fidelity for ordinary PDFs.
         if remaining() > 5 and _should_try_pdf2docx(input_path):
             if _run_in_process(_pdf2docx_worker, (input_path, output_path), remaining()):
                 return output_name
 
-        # Tier 3: LibreOffice - copes with large or complex documents.
+        # Tier 2: LibreOffice - copes with large or complex documents.
         if remaining() > 5 and _convert_with_libreoffice(
             input_path, settings.MEDIA_ROOT, output_path, uid, remaining()
         ):

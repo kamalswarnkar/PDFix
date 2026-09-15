@@ -1,6 +1,6 @@
 {% extends "tools/base.html" %}
+{% load static %}
 {% block head %}
-    {% include "tools/components/spinner_style.html" %}
     <style>
         #pageCountBanner{
             display:none;
@@ -52,12 +52,11 @@
     {% include "tools/components/faq.html" %}
     {% include "tools/components/uploader_script.html" %}
     {% include "tools/components/spinner_script.html" %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
-            integrity="sha512-q+4liFwdPC/bNdhUpZx6aXDx/h77yEQtn4I1slHydcbZK34nLaR3cAeYSJshoxIOq3mjEf7xJE8YWIUHMn+oCQ=="
-            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    <script nonce="{{ csp_nonce }}" type="module">
+        // Served from our own origin: no third-party script can change
+        // underneath us, and the CSP can stay script-src 'self'.
+        const pdfjsLib = await import("{% static 'vendor/pdf.min.mjs' %}");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "{% static 'vendor/pdf.worker.min.mjs' %}";
 
         const pageCountBanner = document.getElementById("pageCountBanner");
         const totalPagesNum = document.getElementById("totalPagesNum");
@@ -72,7 +71,7 @@
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
-                    const pdf = await pdfjsLib.getDocument(new Uint8Array(e.target.result)).promise;
+                    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(e.target.result), isEvalSupported: false }).promise;
                     totalPagesNum.textContent = pdf.numPages;
                     pageCountBanner.style.display = "block";
                     pagesInput.placeholder = "1-" + pdf.numPages;

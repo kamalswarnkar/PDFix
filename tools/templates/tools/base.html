@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-C2B0CGLHDZ"></script>
-    <script>
+    <script nonce="{{ csp_nonce }}" async src="https://www.googletagmanager.com/gtag/js?id=G-C2B0CGLHDZ"></script>
+    <script nonce="{{ csp_nonce }}">
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
@@ -723,7 +723,7 @@
     </div>
 
     <form id="csrfForm" style="display:none;">{% csrf_token %}</form>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         function getCsrf() {
             try {
                 return document.getElementById('csrfForm').querySelector('[name=csrfmiddlewaretoken]').value;
@@ -856,7 +856,7 @@
         });
     </script>
 
-    <script>
+    <script nonce="{{ csp_nonce }}">
     /* Client-side navigation.
 
        The server still renders every page in full - crawlers, no-JS visitors and
@@ -873,6 +873,14 @@
         var container = document.querySelector('.container');
         if (!container || !window.history.pushState || !window.DOMParser) return;
 
+        // Browsers hide the nonce *attribute* once a page is parsed, so copying
+        // it off a script in the fetched HTML yields "" and the CSP blocks the
+        // script we inject. Read this document's real nonce off our own tag
+        // through the IDL property and stamp it on everything we insert - the
+        // same trust propagation 'strict-dynamic' would give us, without it
+        // also disabling 'self' for the PDF tools' dynamic import().
+        var NONCE = (document.currentScript && document.currentScript.nonce) || '';
+
         // External libs (pdf.js, Sortable) stay loaded across swaps; re-running
         // them each time would refetch a megabyte and redefine globals.
         var loaded = {};
@@ -888,6 +896,7 @@
                             for (var i = 0; i < old.attributes.length; i++) {
                                 s.setAttribute(old.attributes[i].name, old.attributes[i].value);
                             }
+                            if (NONCE) s.nonce = NONCE;
                             // Page scripts declare top-level consts. Re-running them in
                             // global scope would throw "already declared" on the second
                             // visit, so give each run its own scope. Anything shared

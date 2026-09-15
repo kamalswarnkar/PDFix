@@ -1,4 +1,4 @@
-penv/
+penv*/
 __pycache__/
 *.py[cod]
 *.sqlite3

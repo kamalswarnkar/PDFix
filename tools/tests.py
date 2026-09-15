@@ -27,7 +27,7 @@ from django.core.mail import EmailMessage
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from PIL import Image
 from pypdf import PdfReader, PdfWriter
@@ -47,6 +47,7 @@ from .services.rotate_pdf import rotate_pdf
 from .services.split_pdf import split_pdf
 from .services.unlock_pdf import unlock_pdf
 from .seo import PAGES
+from . import throttle
 from .uploads import ToolError, media_path, validate_upload, validate_uploads
 
 MEDIA = tempfile.mkdtemp(prefix="trypdf-tests-")
@@ -502,7 +503,7 @@ class ViewTests(TestCase):
         super().tearDownClass()
 
     def setUp(self):
-        views._recent_submissions.clear()
+        throttle.reset()
 
     def test_every_tool_page_loads(self):
         self.assertEqual(len(views.TOOLS), 13)
@@ -655,3 +656,94 @@ class SEOTests(TestCase):
                 with self.subTest(page=name, related=related):
                     self.assertIn(related, PAGES)
                     self.assertNotEqual(related, name)
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class ThrottleTests(TestCase):
+    """The limits are only worth having if they cannot be sidestepped."""
+
+    def setUp(self):
+        throttle.reset()
+
+    def _post_feedback(self, **extra):
+        return self.client.post(
+            "/feedback/submit/", {"feature": "Merge PDF", "issue": "broken"}, **extra
+        )
+
+    def test_forged_x_forwarded_for_does_not_reset_the_count(self):
+        """The header is client-written up to the last hop, so only the last
+        entry identifies the caller. Reading the first one let anyone mint a
+        fresh identity per request."""
+        for _ in range(settings.FEEDBACK_RATE_LIMIT):
+            self.assertEqual(self._post_feedback().status_code, 200)
+
+        blocked = self._post_feedback(HTTP_X_FORWARDED_FOR="1.2.3.4, 127.0.0.1")
+        self.assertEqual(blocked.status_code, 429)
+
+    def test_a_genuinely_different_client_is_counted_separately(self):
+        for _ in range(settings.FEEDBACK_RATE_LIMIT):
+            self._post_feedback(HTTP_X_FORWARDED_FOR="9.9.9.9")
+        self.assertEqual(
+            self._post_feedback(HTTP_X_FORWARDED_FOR="8.8.8.8").status_code, 200
+        )
+
+    def test_client_ip_prefers_the_last_hop(self):
+        request = RequestFactory().get("/", HTTP_X_FORWARDED_FOR="1.2.3.4, 10.0.0.9")
+        self.assertEqual(throttle.client_ip(request), "10.0.0.9")
+
+    def test_client_ip_falls_back_to_remote_addr(self):
+        request = RequestFactory().get("/")
+        self.assertEqual(throttle.client_ip(request), "127.0.0.1")
+
+    @override_settings(TOOL_RATE_LIMIT=2, TOOL_RATE_WINDOW_SECONDS=300)
+    def test_tool_posts_are_capped(self):
+        """One address must not be able to occupy every worker."""
+        for _ in range(2):
+            self.client.post("/merge-pdf/", {})          # cheap: fails validation
+        response = self.client.post("/merge-pdf/", {})
+        self.assertEqual(response.status_code, 429)
+        self.assertContains(response, "wait a moment", status_code=429)
+
+    @override_settings(TOOL_RATE_LIMIT=0)
+    def test_tool_get_requests_are_never_throttled(self):
+        """Crawlers only ever GET, and the SEO work depends on them getting 200s."""
+        self.assertEqual(self.client.get("/merge-pdf/").status_code, 200)
+
+    @override_settings(ADMIN_LOGIN_RATE_LIMIT=2)
+    def test_admin_login_is_throttled(self):
+        url = "/" + settings.ADMIN_URL + "login/"
+        credentials = {"username": "root", "password": "guess"}
+        for _ in range(2):
+            self.client.post(url, credentials)
+        self.assertEqual(self.client.post(url, credentials).status_code, 429)
+
+
+class SecurityHeaderTests(TestCase):
+    def test_csp_is_sent_and_forbids_inline_script(self):
+        policy = self.client.get("/").headers["Content-Security-Policy"]
+        self.assertIn("script-src", policy)
+        self.assertNotIn("'unsafe-inline'", policy.split("style-src")[0])
+        self.assertIn("object-src 'none'", policy)
+        self.assertIn("frame-ancestors 'none'", policy)
+
+    def test_every_inline_script_carries_the_nonce(self):
+        """A missed nonce is invisible locally and breaks the page in production."""
+        import re
+
+        html = self.client.get("/merge-pdf/").content.decode()
+        nonce = re.search(r'nonce="([^"]+)"', html).group(1)
+        for tag in re.findall(r"<script[^>]*>", html):
+            if "application/ld+json" in tag:
+                continue
+            with self.subTest(tag=tag[:60]):
+                self.assertIn('nonce="%s"' % nonce, tag)
+
+    def test_no_third_party_script_or_pdf_worker(self):
+        """pdf.js is served from our own origin, so CVE-class bugs in a CDN
+        copy cannot reach users and the CSP can stay script-src 'self'."""
+        for path in ("/reorder-pdf/", "/rotate-pdf/", "/extract-pages/"):
+            with self.subTest(path=path):
+                html = self.client.get(path).content.decode()
+                self.assertNotIn("cdnjs.cloudflare.com", html)
+                self.assertIn("vendor/pdf.min", html)
+                self.assertIn("isEvalSupported: false", html)

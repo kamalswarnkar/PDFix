@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.csp import CSP
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -109,6 +110,49 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
+# ALLOWED_HOSTS = * turns off host validation, and every canonical URL, og:url
+# and sitemap entry is built from request.get_host() - so a poisoned Host header
+# would rewrite all of them. Refuse to start rather than serve that.
+if "*" in ALLOWED_HOSTS and not DEBUG:
+    raise ImproperlyConfigured(
+        "ALLOWED_HOSTS must not be '*' in production - list your real hostnames."
+    )
+
+# Content Security Policy. Django 6 ships this middleware, so no django-csp.
+#
+# No 'unsafe-inline' for scripts: every inline <script> carries {{ csp_nonce }}.
+# The client-side navigation in base.html injects scripts carrying a nonce from
+# the page it fetched, which will not match this document's - that is fine,
+# because scripts created by script (rather than by the parser) are not subject
+# to the inline check at all.
+#
+# 'self' rather than 'strict-dynamic': the PDF tools reach their library with a
+# dynamic import() of /static/vendor/pdf.min.mjs, and strict-dynamic makes the
+# browser ignore host sources for exactly that kind of request.
+SECURE_CSP = {
+    "default-src": [CSP.SELF],
+    # wasm-unsafe-eval, not unsafe-eval: pdf.js compiles a WebAssembly image
+    # decoder. It does not permit eval().
+    "script-src": [CSP.SELF, CSP.NONCE, CSP.WASM_UNSAFE_EVAL,
+                   "https://www.googletagmanager.com"],
+    # Inline style="" attributes are used throughout the templates; a nonce
+    # cannot cover those, only <style> blocks.
+    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE],
+    # blob: is the uploader's image thumbnails (URL.createObjectURL).
+    "img-src": [CSP.SELF, "data:", "blob:", "https://www.googletagmanager.com"],
+    # The exfiltration barrier: even an injected script cannot POST a user's
+    # file anywhere but back to us.
+    "connect-src": [CSP.SELF, "https://www.google-analytics.com",
+                    "https://*.google-analytics.com",
+                    "https://*.analytics.google.com"],
+    "worker-src": [CSP.SELF, "blob:"],          # the pdf.js worker
+    "font-src": [CSP.SELF],
+    "object-src": [CSP.NONE],
+    "base-uri": [CSP.SELF],
+    "form-action": [CSP.SELF],
+    "frame-ancestors": [CSP.NONE],
+}
+
 
 # ---------------------------------------------------------------------------
 # Applications
@@ -132,6 +176,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.csp.ContentSecurityPolicyMiddleware',
+    'tools.throttle.AdminLoginThrottleMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -144,6 +190,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
+                'django.template.context_processors.csp',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -313,9 +360,28 @@ DEFAULT_FROM_EMAIL = (
 
 FEEDBACK_EMAIL = os.environ.get("FEEDBACK_EMAIL", "kamalswarnkar0111@gmail.com")
 
-# Simple in-process throttle for the feedback/suggestion endpoints.
+# ---------------------------------------------------------------------------
+# Per-IP throttles (tools/throttle.py)
+# ---------------------------------------------------------------------------
+# The feedback forms send email, so the limit protects the Gmail quota.
 FEEDBACK_RATE_LIMIT = int(os.environ.get("FEEDBACK_RATE_LIMIT", 5))
 FEEDBACK_RATE_WINDOW_SECONDS = int(os.environ.get("FEEDBACK_RATE_WINDOW_SECONDS", 3600))
+
+# Each tool POST can hold a worker for the whole CONVERT_TIMEOUT_SECONDS, and
+# there are only WEB_CONCURRENCY x threads of them. Without a cap, a handful of
+# requests from one address takes the site down for everyone else.
+TOOL_RATE_LIMIT = int(os.environ.get("TOOL_RATE_LIMIT", 20))
+TOOL_RATE_WINDOW_SECONDS = int(os.environ.get("TOOL_RATE_WINDOW_SECONDS", 300))
+
+# Django has no brute-force protection on the admin login.
+ADMIN_LOGIN_RATE_LIMIT = int(os.environ.get("ADMIN_LOGIN_RATE_LIMIT", 10))
+ADMIN_LOGIN_RATE_WINDOW_SECONDS = int(os.environ.get("ADMIN_LOGIN_RATE_WINDOW_SECONDS", 900))
+
+# The admin lives at a guessable URL by default, which is what makes it worth
+# brute-forcing in the first place. Set ADMIN_URL to something unguessable in
+# production; it is defence in depth on top of the throttle above, not instead
+# of a strong superuser password.
+ADMIN_URL = os.environ.get("ADMIN_URL", "admin").strip("/") + "/"
 
 
 # ---------------------------------------------------------------------------

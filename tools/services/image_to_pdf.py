@@ -11,6 +11,12 @@ A4_LANDSCAPE = (A4_PORTRAIT[1], A4_PORTRAIT[0])
 
 PAGE_SIZES = ("a4", "fit")
 
+# Pillow's default only *warns* between 89M and 178M pixels and decodes anyway,
+# which is ~500MB of RSS on a container with 512MB. A crafted PNG a few hundred
+# KB on the wire can do that, so cap it low enough to survive and let the
+# resulting DecompressionBombError fall through to the "corrupt image" message.
+Image.MAX_IMAGE_PIXELS = 50_000_000
+
 
 def _flatten(img):
     """Convert to RGB, compositing any transparency onto white.

@@ -20,7 +20,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    # Path comes from ADMIN_URL so it can be moved off the default in production.
+    path(settings.ADMIN_URL, admin.site.urls),
     path('', include('tools.urls')),
 ]
 
