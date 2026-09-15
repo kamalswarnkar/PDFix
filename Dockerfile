@@ -29,8 +29,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # collectstatic needs a non-empty SECRET_KEY; the real one is injected at runtime.
+# ALLOWED_HOSTS is a concrete name rather than "*" because settings.py refuses to
+# import with a wildcard. This step serves no requests, so the value is irrelevant
+# beyond satisfying that check; the real hosts arrive at runtime.
 RUN DJANGO_SECRET_KEY=build-only-placeholder \
-    ALLOWED_HOSTS=* \
+    ALLOWED_HOSTS=localhost \
     DEBUG=false \
     python manage.py collectstatic --noinput
 
